@@ -1,0 +1,28 @@
+### 환경변수 (.env.local에서 자동 로드)
+@supabaseUrl = {{$dotenv SUPABASE_URL}}
+@anonKey = {{$dotenv SUPABASE_ANON_KEY}}
+
+### ============================================
+### 1. 사료 분석 (analyze-food)
+### ============================================
+POST {{supabaseUrl}}/functions/v1/analyze-food
+Content-Type: application/json
+Authorization: Bearer {{anonKey}}
+
+{
+  "food_name": "로얄캐닌",
+  "image_base64": "여기에_base64_문자열",
+  "mime_type": "image/jpeg"
+}
+
+### ============================================
+### 2. 배변 분석 (analyze-stool)
+### ============================================
+POST {{supabaseUrl}}/functions/v1/analyze-stool
+Content-Type: application/json
+Authorization: Bearer {{anonKey}}
+
+{
+  "image_base64": "여기에_base64_문자열",
+  "mime_type": "image/jpeg"
+}

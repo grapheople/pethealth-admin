@@ -1,0 +1,8 @@
+{
+  "rest-client.environmentVariables": {
+    "$shared": {}
+  },
+  "rest-client.defaultHeaders": {},
+  "deno.enable": true,
+  "deno.enablePaths": ["./supabase/functions"]
+}
