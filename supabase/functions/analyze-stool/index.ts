@@ -1,8 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { analyzeImageWithGemini } from "../_shared/gemini.ts";
-import { uploadImage } from "../_shared/storage.ts";
 import type { ApiResponse, StoolAnalysisResult } from "../_shared/types.ts";
 
 const STOOL_ANALYSIS_PROMPT = `# 역할
@@ -137,14 +135,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 1. Storage에 이미지 업로드
-    const { path: storagePath, publicUrl: imageUrl } = await uploadImage(
-      image_base64,
-      mime_type,
-      "stool",
-    );
-
-    // 2. Gemini로 분석
+    // 1. Gemini로 분석
     const analysisResult = (await analyzeImageWithGemini({
       imageBase64: image_base64,
       mimeType: mime_type,
@@ -152,47 +143,10 @@ Deno.serve(async (req) => {
       responseSchema: STOOL_RESPONSE_SCHEMA,
     })) as unknown as StoolAnalysisResult;
 
-    // 3. DB에 저장
-    const supabase = getSupabaseAdmin();
-    const { data: dbRecord, error: dbError } = await supabase
-      .from("stool_analyses")
-      .insert({
-        image_url: imageUrl,
-        image_storage_path: storagePath,
-        animal_type: analysisResult.animal_type,
-        color: analysisResult.color,
-        color_assessment: analysisResult.color_assessment,
-        color_assessment_en: analysisResult.color_assessment_en,
-        consistency: analysisResult.consistency,
-        consistency_assessment: analysisResult.consistency_assessment,
-        consistency_assessment_en: analysisResult.consistency_assessment_en,
-        shape: analysisResult.shape,
-        size: analysisResult.size,
-        has_blood: analysisResult.has_blood,
-        has_mucus: analysisResult.has_mucus,
-        has_foreign_objects: analysisResult.has_foreign_objects,
-        abnormalities: analysisResult.abnormalities,
-        health_score: analysisResult.health_score,
-        health_summary: analysisResult.health_summary,
-        health_summary_en: analysisResult.health_summary_en,
-        concerns: analysisResult.concerns,
-        concerns_en: analysisResult.concerns_en,
-        recommendations: analysisResult.recommendations,
-        recommendations_en: analysisResult.recommendations_en,
-        urgency_level: analysisResult.urgency_level,
-        raw_ai_response: analysisResult,
-      })
-      .select()
-      .single();
-
-    if (dbError) {
-      throw new Error(`Database insert failed: ${dbError.message}`);
-    }
-
-    // 4. 응답 반환
-    const response: ApiResponse<typeof dbRecord> = {
+    // 2. 분석 결과만 반환 (DB 저장은 클라이언트에서 확인 후 처리)
+    const response: ApiResponse<StoolAnalysisResult> = {
       success: true,
-      data: dbRecord,
+      data: analysisResult,
     };
 
     return new Response(JSON.stringify(response), {

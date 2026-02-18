@@ -45,6 +45,7 @@ export interface PortionWithNutrients {
   ingredients: string[];
   ingredients_en: string[];
   calories_g: number;
+  food_amount_g: number;
 }
 
 // --- 배변 분석 ---

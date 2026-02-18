@@ -1,11 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getSupabaseAdmin } from "../_shared/supabaseClient.ts";
 import { analyzeImageWithGemini } from "../_shared/gemini.ts";
-import { uploadImage } from "../_shared/storage.ts";
 import type {
   ApiResponse,
-  FoodAnalysisResult,
   NutrientInfo,
   PortionWithNutrients,
 } from "../_shared/types.ts";
@@ -33,7 +30,7 @@ function buildFullAnalysisPrompt(foodName: string | null, foodAmountG: number | 
 
 ## 2단계: 양(그램) 추정
 ${foodAmountG ? `${amountHint}
-이 값을 신뢰하고 bowl_description에 반영하세요.` : `이미지에서 음식의 양(g)을 추정하세요.
+이 값을 그대로 food_amount_g에 사용하고 bowl_description에 반영하세요.` : `이미지에서 음식의 양(g)을 추정하여 반드시 food_amount_g에 숫자로 작성하세요.
 
 참고 기준:
 - 반려동물 밥그릇(소형): 직경 12~14cm, 가득 채우면 약 80~120g (건사료)
@@ -41,7 +38,8 @@ ${foodAmountG ? `${amountHint}
 - 반려동물 밥그릇(대형): 직경 20cm+, 가득 채우면 약 250~400g (건사료)
 - 습식 사료 1캔: 보통 80~100g
 - 종이컵 1컵 분량: 약 80~100g (건사료)
-- 화식/간식은 재료 구성과 부피로 추정`}
+- 화식/간식은 재료 구성과 부피로 추정
+- 판단이 어려워도 반드시 추정값을 작성하세요 (0은 허용하지 않음)`}
 
 ## 3단계: 영양성분 조사 (100g 기준)
 - **사료인 경우**: ${foodName ? `"${foodName}" 사료의 알려진 영양성분을 기반으로 작성. 정확한 정보가 없으면 해당 사료 유형의 일반적 수치로 추정.` : "이미지에서 사료 종류를 판단하고 해당 유형의 일반적인 영양성분을 추정."}
@@ -68,7 +66,8 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
   },
   "ingredients": ["닭고기", "현미", "귀리"],
   "ingredients_en": ["Chicken", "Brown rice", "Oats"],
-  "calories_g": 370
+  "calories_g": 370,
+  "food_amount_g": 150
 }
 
 # 규칙
@@ -79,6 +78,7 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
 - nutrients는 100g 기준 값으로 작성
 - nutrients에 protein, fat, carbohydrate, fiber 4개 항목만 포함할것
 - calories_g는 100g 기준 칼로리, 반드시 작성할것
+- food_amount_g: 이미지에서 추정한 음식의 총 양(g). 반드시 0보다 큰 숫자로 작성. 판단이 어려우면 가장 가능성 높은 값으로 추정
 - ingredients: 사료는 주요 원재료, 화식/간식은 이미지에서 보이는 재료 나열
 - ingredients_en: ingredients의 영어 버전
 - bowl_description: 음식 유형 + 용기 + 양을 자연스럽게 설명 (한국어)
@@ -126,11 +126,12 @@ const FOOD_RESPONSE_SCHEMA = {
     ingredients: { type: "array", items: { type: "string" } },
     ingredients_en: { type: "array", items: { type: "string" } },
     calories_g: { type: "number" },
+    food_amount_g: { type: "number" },
   },
   required: [
     "food_type", "food_name", "food_name_en",
     "bowl_description", "bowl_description_en", "confidence",
-    "nutrients", "ingredients", "ingredients_en", "calories_g",
+    "nutrients", "ingredients", "ingredients_en", "calories_g", "food_amount_g",
   ],
 };
 
@@ -189,19 +190,8 @@ Deno.serve(async (req) => {
     const parsedAmountG: number | null = (typeof food_amount_g === "number" && food_amount_g > 0)
       ? food_amount_g
       : null;
-    const supabase = getSupabaseAdmin();
 
-    // 1. Storage에 이미지 업로드
-    const { path: storagePath, publicUrl: imageUrl } = await uploadImage(
-      image_base64,
-      mime_type,
-      "food",
-    );
-
-    let analysisResult: FoodAnalysisResult;
-
-
-    // --- Case B: DB에 없음 → Gemini가 영양정보도 함께 조사 ---
+    // 1. Gemini로 분석
     const geminiResult = (await analyzeImageWithGemini({
       imageBase64: image_base64,
       mimeType: mime_type,
@@ -232,53 +222,34 @@ Deno.serve(async (req) => {
       ? trimmedFoodName
       : geminiResult.food_name_en || "Unknown food";
 
-    analysisResult = {
-      animal_type: null,
-      food_name: resolvedFoodName,
-      food_name_en: resolvedFoodNameEn,
-      food_amount_g: parsedAmountG,
-      calories_g: geminiResult.calories_g || 0,
-      nutrients: ratedNutrients,
-      ingredients: geminiResult.ingredients || [],
-      ingredients_en: geminiResult.ingredients_en || [],
-      overall_rating: 6,
-      rating_summary: `"${resolvedFoodName}"의 영양성분을 AI가 추정하였습니다. 신뢰도: ${confidenceLabel}.`,
-      rating_summary_en: `Nutritional analysis of "${resolvedFoodNameEn}" estimated by AI. Confidence: ${confidenceLabel}.`,
-      recommendations: `${geminiResult.bowl_description || ""}`,
-      recommendations_en: `${geminiResult.bowl_description_en || ""}`,
-    };
-
-    // 3. DB에 저장
-    const { data: dbRecord, error: dbError } = await supabase
-      .from("food_analyses")
-      .insert({
-        image_url: imageUrl,
-        image_storage_path: storagePath,
-        animal_type: analysisResult.animal_type,
-        food_name: analysisResult.food_name,
-        food_name_en: analysisResult.food_name_en,
-        food_amount_g: analysisResult.food_amount_g,
-        calories_g: analysisResult.calories_g,
-        nutrients: analysisResult.nutrients,
-        ingredients: analysisResult.ingredients,
-        ingredients_en: analysisResult.ingredients_en,
-        overall_rating: analysisResult.overall_rating,
-        rating_summary: analysisResult.rating_summary,
-        rating_summary_en: analysisResult.rating_summary_en,
-        recommendations: analysisResult.recommendations,
-        recommendations_en: analysisResult.recommendations_en,
-        raw_ai_response: analysisResult,
-      })
-      .select()
-      .single();
-
-    if (dbError) {
-      throw new Error(`Database insert failed: ${dbError.message}`);
-    }
-
-    const response: ApiResponse<typeof dbRecord> = {
+    // 2. 분석 결과만 반환 (DB 저장은 클라이언트에서 확인 후 처리)
+    const response: ApiResponse<{
+      food_name: string;
+      food_name_en: string;
+      calories_g: number;
+      food_amount_g: number | null;
+      nutrients: Record<string, NutrientInfo>;
+      ingredients: string[];
+      ingredients_en: string[];
+      rating_summary: string;
+      rating_summary_en: string;
+      recommendations: string;
+      recommendations_en: string;
+    }> = {
       success: true,
-      data: dbRecord,
+      data: {
+        food_name: resolvedFoodName,
+        food_name_en: resolvedFoodNameEn,
+        calories_g: geminiResult.calories_g || 0,
+        food_amount_g: parsedAmountG ?? geminiResult.food_amount_g ?? 0,
+        nutrients: ratedNutrients,
+        ingredients: geminiResult.ingredients || [],
+        ingredients_en: geminiResult.ingredients_en || [],
+        rating_summary: `"${resolvedFoodName}"의 영양성분을 AI가 추정하였습니다. 신뢰도: ${confidenceLabel}.`,
+        rating_summary_en: `Nutritional analysis of "${resolvedFoodNameEn}" estimated by AI. Confidence: ${confidenceLabel}.`,
+        recommendations: `${geminiResult.bowl_description || ""}`,
+        recommendations_en: `${geminiResult.bowl_description_en || ""}`,
+      },
     };
 
     return new Response(JSON.stringify(response), {

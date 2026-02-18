@@ -14,6 +14,7 @@ interface DiaryRequest {
   totalSteps: number;
   foodNames: string[];
   walkMemos?: string[];
+  foodMemos?: string[];
 }
 
 Deno.serve(async (req) => {
@@ -120,6 +121,7 @@ function buildPrompt(data: DiaryRequest): string {
     totalSteps,
     foodNames,
     walkMemos = [],
+    foodMemos=[],
   } = data;
 
   const personalityGuide = personalityNames.length > 0
@@ -138,9 +140,15 @@ function buildPrompt(data: DiaryRequest): string {
     activityLines.push(`- 먹은 것: ${foodNames.join(", ")}`);
   }
 
+  if (foodMemos.length > 0) {
+    activityLines.push(
+      `- 보호자가 남긴 식사메모: ${foodMemos.map((m) => `"${m}"`).join(", ")}`,
+    );
+  }
+
   if (walkMemos.length > 0) {
     activityLines.push(
-      `- 보호자가 남긴 메모: ${walkMemos.map((m) => `"${m}"`).join(", ")}`,
+      `- 보호자가 남긴 활동메모: ${walkMemos.map((m) => `"${m}"`).join(", ")}`,
     );
   }
 
