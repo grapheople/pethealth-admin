@@ -10,31 +10,45 @@ import type {
   PortionWithNutrients,
 } from "../_shared/types.ts";
 
-// --- 프롬프트: 급여량 추정 + 사료 영양정보 조사 (DB에 없는 경우) ---
-function buildFullAnalysisPrompt(foodName: string): string {
+// --- 프롬프트: 음식 분석 (사료 / 화식 / 간식 대응) ---
+function buildFullAnalysisPrompt(foodName: string | null, foodAmountG: number | null): string {
+  const foodNameHint = foodName
+    ? `사용자가 입력한 사료 이름: "${foodName}"`
+    : "";
+  const amountHint = foodAmountG
+    ? `사용자가 입력한 급여량: ${foodAmountG}g`
+    : "";
+
   return `# 역할
-당신은 반려동물 사료 전문 영양 분석가이자 급여량 측정 전문가입니다.
+당신은 반려동물 영양 분석 전문가입니다.
 
 # 작업
-2가지를 동시에 수행하세요:
-1. 이미지에 보이는 사료의 양(그램)을 추정
-2. "${foodName}" 사료의 영양성분 정보를 조사
+이미지를 보고 아래 순서대로 분석하세요.
 
-# 급여량 추정 방법
-1단계: 이미지에서 사료가 담긴 용기의 크기를 파악하세요.
-2단계: 용기 대비 사료가 채워진 비율을 판단하세요.
-3단계: 사료 알갱이의 크기와 밀도를 고려하여 총 무게(g)를 추정하세요.
+## 1단계: 음식 유형 판별
+이미지에 보이는 음식이 다음 중 무엇인지 판단하세요:
+- **사료(건사료/습식사료)**: 상업용 반려동물 사료
+- **화식**: 보호자가 직접 조리한 수제 식사
+- **간식**: 저키, 덴탈껌, 과일/채소 조각, 간식용 트릿 등
 
-# 참고 기준
-- 일반 반려동물 밥그릇(소형): 직경 12~14cm, 가득 채우면 약 80~120g (건사료)
-- 일반 반려동물 밥그릇(중형): 직경 15~18cm, 가득 채우면 약 150~250g (건사료)
-- 일반 반려동물 밥그릇(대형): 직경 20cm+, 가득 채우면 약 250~400g (건사료)
+## 2단계: 양(그램) 추정
+${foodAmountG ? `${amountHint}
+이 값을 신뢰하고 bowl_description에 반영하세요.` : `이미지에서 음식의 양(g)을 추정하세요.
+
+참고 기준:
+- 반려동물 밥그릇(소형): 직경 12~14cm, 가득 채우면 약 80~120g (건사료)
+- 반려동물 밥그릇(중형): 직경 15~18cm, 가득 채우면 약 150~250g (건사료)
+- 반려동물 밥그릇(대형): 직경 20cm+, 가득 채우면 약 250~400g (건사료)
 - 습식 사료 1캔: 보통 80~100g
 - 종이컵 1컵 분량: 약 80~100g (건사료)
+- 화식/간식은 재료 구성과 부피로 추정`}
 
-# 영양정보 조사
-"${foodName}" 사료에 대해 알고 있는 정보를 바탕으로 100g당 영양성분을 작성하세요.
-정확한 정보를 모르면 해당 사료 유형의 일반적인 수치로 추정하세요.
+## 3단계: 영양성분 조사 (100g 기준)
+- **사료인 경우**: ${foodName ? `"${foodName}" 사료의 알려진 영양성분을 기반으로 작성. 정확한 정보가 없으면 해당 사료 유형의 일반적 수치로 추정.` : "이미지에서 사료 종류를 판단하고 해당 유형의 일반적인 영양성분을 추정."}
+- **화식인 경우**: 보이는 재료(고기, 채소, 곡물 등)를 파악하고 조합에 따른 영양성분을 추정.
+- **간식인 경우**: 간식 종류를 파악하고 해당 간식의 일반적인 영양성분을 추정.
+
+${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 참고하세요. 화식/간식이면 무시하고 이미지를 기준으로 분석하세요.` : ""}
 
 # 출력 형식
 반드시 아래 JSON 형식으로만 응답하세요.
@@ -46,7 +60,7 @@ function buildFullAnalysisPrompt(foodName: string): string {
     "carbohydrate": { "value": 30.0, "unit": "g" },
     "protein": { "value": 30.0, "unit": "g" },
     "fat": { "value": 15.0, "unit": "g" },
-    "fiber": { "value": 4.0, "unit": "g" },
+    "fiber": { "value": 4.0, "unit": "g" }
   },
   "ingredients": ["닭고기", "현미", "귀리"],
   "calories_g": 370
@@ -56,7 +70,9 @@ function buildFullAnalysisPrompt(foodName: string): string {
 - confidence: "high", "medium", "low"
 - nutrients는 100g 기준 값으로 작성
 - nutrients에 protein, fat, carbohydrate, fiber 4개 항목만 포함할것
-- calories_g 반드시 작성할것
+- calories_g는 100g 기준 칼로리, 반드시 작성할것
+- ingredients: 사료는 주요 원재료, 화식/간식은 이미지에서 보이는 재료 나열
+- bowl_description: 음식 유형 + 용기 + 양을 자연스럽게 설명
 - 이미지가 불분명해도 반드시 추정값을 작성하세요
 - 모든 텍스트는 한국어로 작성하세요
 - JSON만 출력하세요`;
@@ -102,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { image_base64, mime_type = "image/jpeg", food_name } = await req.json();
+    const { image_base64, mime_type = "image/jpeg", food_name, food_amount_g } = await req.json();
 
     if (!image_base64) {
       return new Response(
@@ -111,14 +127,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!food_name || typeof food_name !== "string" || food_name.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: "사료 이름이 필요합니다. food_name 필드를 포함해주세요." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const trimmedFoodName = food_name.trim();
+    const trimmedFoodName: string | null = (typeof food_name === "string" && food_name.trim().length > 0)
+      ? food_name.trim()
+      : null;
+    const parsedAmountG: number | null = (typeof food_amount_g === "number" && food_amount_g > 0)
+      ? food_amount_g
+      : null;
     const supabase = getSupabaseAdmin();
 
     // 1. Storage에 이미지 업로드
@@ -135,7 +149,7 @@ Deno.serve(async (req) => {
     const geminiResult = (await analyzeImageWithGemini({
       imageBase64: image_base64,
       mimeType: mime_type,
-      prompt: buildFullAnalysisPrompt(trimmedFoodName),
+      prompt: buildFullAnalysisPrompt(trimmedFoodName, parsedAmountG),
     })) as unknown as PortionWithNutrients;
 
     const nutrients = geminiResult.nutrients || {};
@@ -150,16 +164,19 @@ Deno.serve(async (req) => {
     }
 
 
+    const displayName = trimmedFoodName || "사료";
+
     analysisResult = {
       product_name: trimmedFoodName,
       animal_type: null,
       food_type: null,
       food_name: trimmedFoodName,
+      food_amount_g: parsedAmountG,
       calories_g: geminiResult.calories_g || 0,
       nutrients: ratedNutrients,
       ingredients: geminiResult.ingredients || [],
       overall_rating: 6,
-      rating_summary: `"${trimmedFoodName}" 사료의 영양성분을 AI가 추정하였습니다. 신뢰도: ${geminiResult.confidence || "medium"}.`,
+      rating_summary: `"${displayName}" 사료의 영양성분을 AI가 추정하였습니다. 신뢰도: ${geminiResult.confidence || "medium"}.`,
       recommendations: `${geminiResult.bowl_description || ""}. 정확한 영양성분은 제품 포장의 성분표를 확인해주세요.`,
     };
 
@@ -173,6 +190,7 @@ Deno.serve(async (req) => {
         animal_type: analysisResult.animal_type,
         food_type: analysisResult.food_type,
         food_name: analysisResult.food_name,
+        food_amount_g: analysisResult.food_amount_g,
         calories_g: analysisResult.calories_g,
         nutrients: analysisResult.nutrients,
         ingredients: analysisResult.ingredients,

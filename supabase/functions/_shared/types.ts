@@ -22,6 +22,7 @@ export interface FoodAnalysisResult {
   animal_type: string | null;
   food_type: string | null;
   food_name: string | null;
+  food_amount_g: number | null;
   calories_g: number;
   nutrients: Record<string, NutrientInfo>;
   ingredients: string[];

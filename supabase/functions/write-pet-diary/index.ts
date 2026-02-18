@@ -1,0 +1,154 @@
+// supabase/functions/write-pet-diary/index.ts
+// 반려동물 시점의 자연스러운 AI 일기를 생성하는 Edge Function
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { corsHeaders } from "../_shared/cors.ts";
+
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
+const GEMINI_URL =
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+interface DiaryRequest {
+  personalityNames: string[];
+  totalWalkMin: number;
+  totalSteps: number;
+  foodNames: string[];
+  walkMemos?: string[];
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const body: DiaryRequest = await req.json();
+    const {
+      personalityNames,
+      totalWalkMin,
+      totalSteps,
+      foodNames,
+      walkMemos = [],
+    } = body;
+
+    // 입력 검증
+    if (!Array.isArray(personalityNames) || !Array.isArray(foodNames)) {
+      return new Response(
+        JSON.stringify({ error: "personalityNames, foodNames는 배열이어야 합니다" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const prompt = buildPrompt({
+      personalityNames,
+      totalWalkMin,
+      totalSteps,
+      foodNames,
+      walkMemos,
+    });
+
+    const geminiRes = await fetch(GEMINI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 1.0,
+          topP: 0.95,
+          topK: 40,
+          maxOutputTokens: 600,
+        },
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+        ],
+      }),
+    });
+
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini API error:", errText);
+      return new Response(
+        JSON.stringify({ error: "AI 생성 실패", detail: errText }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const geminiData = await geminiRes.json();
+    const diary =
+      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+
+    if (!diary) {
+      return new Response(
+        JSON.stringify({ error: "AI가 빈 응답을 반환했습니다" }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ diary }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (err) {
+    console.error("Edge Function error:", err);
+    return new Response(
+      JSON.stringify({ error: "서버 오류가 발생했습니다" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+});
+
+/** AI 프롬프트 빌드 */
+function buildPrompt(data: DiaryRequest): string {
+  const {
+    personalityNames,
+    totalWalkMin,
+    totalSteps,
+    foodNames,
+    walkMemos = [],
+  } = data;
+
+  const personalityGuide = personalityNames.length > 0
+    ? `이 아이의 성격: ${personalityNames.join(", ")}. 이 성격이 말투와 생각에 자연스럽게 드러나야 해.`
+    : "평범하고 밝은 강아지 말투로 써줘.";
+
+  const activityLines: string[] = [];
+
+  if (totalWalkMin > 0) {
+    activityLines.push(`- 산책: ${totalWalkMin}분, ${totalSteps}걸음`);
+  } else {
+    activityLines.push("- 오늘은 산책을 하지 않았어");
+  }
+
+  if (foodNames.length > 0) {
+    activityLines.push(`- 먹은 것: ${foodNames.join(", ")}`);
+  }
+
+  if (walkMemos.length > 0) {
+    activityLines.push(
+      `- 보호자가 남긴 메모: ${walkMemos.map((m) => `"${m}"`).join(", ")}`,
+    );
+  }
+
+  const activityBlock = activityLines.join("\n");
+
+  return `너는 반려동물이야. 오늘 하루를 1인칭 시점으로 일기를 써줘.
+
+## 말투 & 성격
+${personalityGuide}
+- 너무 유아적이지 않고 자연스럽게 읽히도록.
+- 이모지는 쓰지 마.
+
+## 오늘의 참고 데이터
+${activityBlock}
+
+## 작성 규칙
+1. 위 데이터를 모두 나열하지 않아도 돼. 영감을 받아 자유롭게 써.
+2. 데이터에 없는 상상의 에피소드를 추가해도 좋아 (예: 창밖을 봤다, 낮잠을 잤다, 간식을 기다렸다 등).
+3. 보호자와의 관계, 일상의 소소한 행복, 오늘의 기분 등을 자연스럽게 녹여줘.
+4. 보호자 메모가 있다면 그 내용을 참고해서 스토리에 살짝 반영해줘. 그대로 인용하지는 마.
+5. 분량은 5~8문장. 너무 길지 않게.
+6. 제목이나 날짜 없이, 일기 본문만 작성해.`;
+}
