@@ -1,11 +1,11 @@
-# Pet Food Analyzer
+# PetHealth Admin
 
 반려동물 사료 영양성분 분석 및 배변 건강상태 분석 API (Supabase Edge Functions + Google Gemini)
 
 ## 프로젝트 구조
 
 ```
-pet-food-analyzer/
+pethealth-admin/
 ├── CLAUDE.md                    # 프로젝트 가이드
 ├── .env                         # 환경 변수 (git 미추적)
 ├── .gitignore
