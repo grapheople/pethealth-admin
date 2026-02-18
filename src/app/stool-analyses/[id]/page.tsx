@@ -45,10 +45,16 @@ export default async function StoolAnalysisDetailPage({ params }: Props) {
         <div className="space-y-4">
           <Section label="색상">{data.color ?? "-"}</Section>
           <Section label="색상 평가">{data.color_assessment ?? "-"}</Section>
+          {data.color_assessment_en && (
+            <Section label="Color Assessment (EN)">{data.color_assessment_en}</Section>
+          )}
           <Section label="경도">{data.consistency ?? "-"}</Section>
           <Section label="경도 평가">
             {data.consistency_assessment ?? "-"}
           </Section>
+          {data.consistency_assessment_en && (
+            <Section label="Consistency (EN)">{data.consistency_assessment_en}</Section>
+          )}
           <Section label="형태">{data.shape ?? "-"}</Section>
           <Section label="크기">{data.size ?? "-"}</Section>
         </div>
@@ -60,6 +66,13 @@ export default async function StoolAnalysisDetailPage({ params }: Props) {
             {data.health_summary ?? "-"}
           </p>
         </Section>
+        {data.health_summary_en && (
+          <Section label="Health Summary (EN)">
+            <p className="text-sm whitespace-pre-wrap">
+              {data.health_summary_en}
+            </p>
+          </Section>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           <div className="flex items-center gap-2">
             <BoolIndicator value={data.has_blood} />
@@ -87,6 +100,21 @@ export default async function StoolAnalysisDetailPage({ params }: Props) {
           <JsonViewer data={data.recommendations} label="권장사항" />
         </Section>
       </div>
+
+      {(data.concerns_en || data.recommendations_en) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {data.concerns_en && (
+            <Section label="Concerns (EN)">
+              <JsonViewer data={data.concerns_en} label="Concerns" />
+            </Section>
+          )}
+          {data.recommendations_en && (
+            <Section label="Recommendations (EN)">
+              <JsonViewer data={data.recommendations_en} label="Recommendations" />
+            </Section>
+          )}
+        </div>
+      )}
 
       <Section label="AI 원본 응답">
         <JsonViewer data={data.raw_ai_response} label="AI 원본 응답" />

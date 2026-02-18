@@ -5,6 +5,7 @@ interface GeminiRequest {
   imageBase64: string;
   mimeType: string;
   prompt: string;
+  responseSchema?: Record<string, unknown>;
 }
 
 interface GeminiResponse {
@@ -45,6 +46,7 @@ export async function analyzeImageWithGemini(
     generationConfig: {
       responseMimeType: "application/json",
       temperature: 0.2,
+      ...(request.responseSchema ? { responseSchema: request.responseSchema } : {}),
     },
   };
 

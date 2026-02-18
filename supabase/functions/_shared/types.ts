@@ -28,15 +28,19 @@ export interface FoodAnalysisResult {
   ingredients: string[];
   overall_rating: number;
   rating_summary: string;
+  rating_summary_en: string;
   recommendations: string;
+  recommendations_en: string;
 }
 
 // --- Gemini 급여량 + 영양조사 응답 ---
 export interface PortionWithNutrients {
   bowl_description: string;
+  bowl_description_en: string;
   confidence: string;
   nutrients: Record<string, NutrientInfo>;
   ingredients: string[];
+  ingredients_en: string[];
   calories_g: number;
 }
 
@@ -51,8 +55,10 @@ export interface StoolAnalysisResult {
   animal_type: string | null;
   color: string;
   color_assessment: string;
+  color_assessment_en: string;
   consistency: string;
   consistency_assessment: string;
+  consistency_assessment_en: string;
   shape: string;
   size: string;
   has_blood: boolean;
@@ -61,7 +67,10 @@ export interface StoolAnalysisResult {
   abnormalities: Abnormality[];
   health_score: number;
   health_summary: string;
+  health_summary_en: string;
   concerns: string[];
+  concerns_en: string[];
   recommendations: string[];
+  recommendations_en: string[];
   urgency_level: "normal" | "monitor" | "caution" | "urgent";
 }

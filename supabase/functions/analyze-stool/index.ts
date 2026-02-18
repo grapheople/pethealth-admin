@@ -24,8 +24,10 @@ const STOOL_ANALYSIS_PROMPT = `# 역할
   "animal_type": "dog 또는 cat 또는 null",
   "color": "갈색",
   "color_assessment": "정상적인 갈색으로, 건강한 소화 상태를 나타냅니다.",
+  "color_assessment_en": "Normal brown color, indicating healthy digestion.",
   "consistency": "정상",
   "consistency_assessment": "적절한 수분을 함유한 정상 경도입니다.",
+  "consistency_assessment_en": "Normal consistency with appropriate moisture content.",
   "shape": "통나무형",
   "size": "정상",
   "has_blood": false,
@@ -34,8 +36,11 @@ const STOOL_ANALYSIS_PROMPT = `# 역할
   "abnormalities": [],
   "health_score": 8,
   "health_summary": "건강 상태 요약을 2~3문장으로 작성",
+  "health_summary_en": "Health summary in 2-3 sentences in English",
   "concerns": ["우려 사항이 있으면 작성, 없으면 빈 배열"],
+  "concerns_en": ["Concerns in English, empty array if none"],
   "recommendations": ["권장 사항을 1~3개 작성"],
+  "recommendations_en": ["Recommendations in English, 1-3 items"],
   "urgency_level": "normal"
 }
 
@@ -68,8 +73,47 @@ const STOOL_ANALYSIS_PROMPT = `# 역할
 - has_blood, has_mucus, has_foreign_objects는 반드시 true 또는 false로 작성하세요.
 - health_score는 반드시 1~10 사이 정수로 작성하세요.
 - urgency_level은 반드시 "normal", "monitor", "caution", "urgent" 중 하나로 작성하세요.
-- 모든 텍스트는 한국어로, 보호자가 이해하기 쉬운 언어로 작성하되 의학적으로 정확해야 합니다.
+- 한국어 필드는 보호자가 이해하기 쉬운 언어로 작성하되 의학적으로 정확해야 합니다.
+- _en 접미사가 붙은 필드는 동일한 내용을 영어로 작성하세요.
+- 한국어 필드와 영어 필드를 모두 반드시 작성하세요.
 - JSON만 출력하세요. 설명, 마크다운, 코드블록 기호는 포함하지 마세요.`;
+
+const STOOL_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    animal_type: { type: "string", nullable: true },
+    color: { type: "string" },
+    color_assessment: { type: "string" },
+    color_assessment_en: { type: "string" },
+    consistency: { type: "string" },
+    consistency_assessment: { type: "string" },
+    consistency_assessment_en: { type: "string" },
+    shape: { type: "string" },
+    size: { type: "string" },
+    has_blood: { type: "boolean" },
+    has_mucus: { type: "boolean" },
+    has_foreign_objects: { type: "boolean" },
+    abnormalities: { type: "array", items: { type: "string" } },
+    health_score: { type: "integer" },
+    health_summary: { type: "string" },
+    health_summary_en: { type: "string" },
+    concerns: { type: "array", items: { type: "string" } },
+    concerns_en: { type: "array", items: { type: "string" } },
+    recommendations: { type: "array", items: { type: "string" } },
+    recommendations_en: { type: "array", items: { type: "string" } },
+    urgency_level: { type: "string", enum: ["normal", "monitor", "caution", "urgent"] },
+  },
+  required: [
+    "color", "color_assessment", "color_assessment_en",
+    "consistency", "consistency_assessment", "consistency_assessment_en",
+    "shape", "size", "has_blood", "has_mucus", "has_foreign_objects",
+    "abnormalities", "health_score",
+    "health_summary", "health_summary_en",
+    "concerns", "concerns_en",
+    "recommendations", "recommendations_en",
+    "urgency_level",
+  ],
+};
 
 Deno.serve(async (req) => {
   // CORS preflight
@@ -105,6 +149,7 @@ Deno.serve(async (req) => {
       imageBase64: image_base64,
       mimeType: mime_type,
       prompt: STOOL_ANALYSIS_PROMPT,
+      responseSchema: STOOL_RESPONSE_SCHEMA,
     })) as unknown as StoolAnalysisResult;
 
     // 3. DB에 저장
@@ -117,8 +162,10 @@ Deno.serve(async (req) => {
         animal_type: analysisResult.animal_type,
         color: analysisResult.color,
         color_assessment: analysisResult.color_assessment,
+        color_assessment_en: analysisResult.color_assessment_en,
         consistency: analysisResult.consistency,
         consistency_assessment: analysisResult.consistency_assessment,
+        consistency_assessment_en: analysisResult.consistency_assessment_en,
         shape: analysisResult.shape,
         size: analysisResult.size,
         has_blood: analysisResult.has_blood,
@@ -127,8 +174,11 @@ Deno.serve(async (req) => {
         abnormalities: analysisResult.abnormalities,
         health_score: analysisResult.health_score,
         health_summary: analysisResult.health_summary,
+        health_summary_en: analysisResult.health_summary_en,
         concerns: analysisResult.concerns,
+        concerns_en: analysisResult.concerns_en,
         recommendations: analysisResult.recommendations,
+        recommendations_en: analysisResult.recommendations_en,
         urgency_level: analysisResult.urgency_level,
         raw_ai_response: analysisResult,
       })

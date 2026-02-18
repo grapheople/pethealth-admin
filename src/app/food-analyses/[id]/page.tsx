@@ -57,6 +57,20 @@ export default async function FoodAnalysisDetailPage({ params }: Props) {
               {data.recommendations ?? "-"}
             </p>
           </Section>
+          {data.rating_summary_en && (
+            <Section label="Rating Summary (EN)">
+              <p className="text-sm whitespace-pre-wrap">
+                {data.rating_summary_en}
+              </p>
+            </Section>
+          )}
+          {data.recommendations_en && (
+            <Section label="Recommendations (EN)">
+              <p className="text-sm whitespace-pre-wrap">
+                {data.recommendations_en}
+              </p>
+            </Section>
+          )}
         </div>
       </div>
 

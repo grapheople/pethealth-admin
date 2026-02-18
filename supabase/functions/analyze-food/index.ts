@@ -55,6 +55,7 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
 
 {
   "bowl_description": "중형 밥그릇에 약 2/3 정도 채워진 건사료",
+  "bowl_description_en": "About 2/3 filled medium bowl of dry kibble",
   "confidence": "medium",
   "nutrients": {
     "carbohydrate": { "value": 30.0, "unit": "g" },
@@ -63,6 +64,7 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
     "fiber": { "value": 4.0, "unit": "g" }
   },
   "ingredients": ["닭고기", "현미", "귀리"],
+  "ingredients_en": ["Chicken", "Brown rice", "Oats"],
   "calories_g": 370
 }
 
@@ -72,11 +74,55 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
 - nutrients에 protein, fat, carbohydrate, fiber 4개 항목만 포함할것
 - calories_g는 100g 기준 칼로리, 반드시 작성할것
 - ingredients: 사료는 주요 원재료, 화식/간식은 이미지에서 보이는 재료 나열
-- bowl_description: 음식 유형 + 용기 + 양을 자연스럽게 설명
+- ingredients_en: ingredients의 영어 버전
+- bowl_description: 음식 유형 + 용기 + 양을 자연스럽게 설명 (한국어)
+- bowl_description_en: bowl_description의 영어 버전
 - 이미지가 불분명해도 반드시 추정값을 작성하세요
-- 모든 텍스트는 한국어로 작성하세요
+- 한국어 필드와 영어 필드를 모두 작성하세요
 - JSON만 출력하세요`;
 }
+
+const FOOD_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    bowl_description: { type: "string" },
+    bowl_description_en: { type: "string" },
+    confidence: { type: "string", enum: ["high", "medium", "low"] },
+    nutrients: {
+      type: "object",
+      properties: {
+        carbohydrate: {
+          type: "object",
+          properties: { value: { type: "number" }, unit: { type: "string" } },
+          required: ["value", "unit"],
+        },
+        protein: {
+          type: "object",
+          properties: { value: { type: "number" }, unit: { type: "string" } },
+          required: ["value", "unit"],
+        },
+        fat: {
+          type: "object",
+          properties: { value: { type: "number" }, unit: { type: "string" } },
+          required: ["value", "unit"],
+        },
+        fiber: {
+          type: "object",
+          properties: { value: { type: "number" }, unit: { type: "string" } },
+          required: ["value", "unit"],
+        },
+      },
+      required: ["carbohydrate", "protein", "fat", "fiber"],
+    },
+    ingredients: { type: "array", items: { type: "string" } },
+    ingredients_en: { type: "array", items: { type: "string" } },
+    calories_g: { type: "number" },
+  },
+  required: [
+    "bowl_description", "bowl_description_en", "confidence",
+    "nutrients", "ingredients", "ingredients_en", "calories_g",
+  ],
+};
 
 // --- 영양소 등급 평가 ---
 function rateNutrient(
@@ -150,6 +196,7 @@ Deno.serve(async (req) => {
       imageBase64: image_base64,
       mimeType: mime_type,
       prompt: buildFullAnalysisPrompt(trimmedFoodName, parsedAmountG),
+      responseSchema: FOOD_RESPONSE_SCHEMA,
     })) as unknown as PortionWithNutrients;
 
     const nutrients = geminiResult.nutrients || {};
@@ -166,6 +213,9 @@ Deno.serve(async (req) => {
 
     const displayName = trimmedFoodName || "사료";
 
+    const confidenceLabel = geminiResult.confidence || "medium";
+    const displayNameEn = trimmedFoodName || "pet food";
+
     analysisResult = {
       product_name: trimmedFoodName,
       animal_type: null,
@@ -176,8 +226,10 @@ Deno.serve(async (req) => {
       nutrients: ratedNutrients,
       ingredients: geminiResult.ingredients || [],
       overall_rating: 6,
-      rating_summary: `"${displayName}" 사료의 영양성분을 AI가 추정하였습니다. 신뢰도: ${geminiResult.confidence || "medium"}.`,
-      recommendations: `${geminiResult.bowl_description || ""}. 정확한 영양성분은 제품 포장의 성분표를 확인해주세요.`,
+      rating_summary: `"${displayName}" 사료의 영양성분을 AI가 추정하였습니다. 신뢰도: ${confidenceLabel}.`,
+      rating_summary_en: `Nutritional analysis of "${displayNameEn}" estimated by AI. Confidence: ${confidenceLabel}.`,
+      recommendations: `${geminiResult.bowl_description || ""}`,
+      recommendations_en: `${geminiResult.bowl_description_en || ""}`,
     };
 
     // 3. DB에 저장
@@ -196,7 +248,9 @@ Deno.serve(async (req) => {
         ingredients: analysisResult.ingredients,
         overall_rating: analysisResult.overall_rating,
         rating_summary: analysisResult.rating_summary,
+        rating_summary_en: analysisResult.rating_summary_en,
         recommendations: analysisResult.recommendations,
+        recommendations_en: analysisResult.recommendations_en,
         raw_ai_response: analysisResult,
       })
       .select()
