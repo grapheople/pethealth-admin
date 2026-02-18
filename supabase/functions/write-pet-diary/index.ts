@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
           temperature: 1.0,
           topP: 0.95,
           topK: 40,
-          maxOutputTokens: 600,
+          maxOutputTokens: 1200,
+          responseMimeType: "application/json",
         },
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
@@ -77,18 +78,29 @@ Deno.serve(async (req) => {
     }
 
     const geminiData = await geminiRes.json();
-    const diary =
+    const rawText =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
 
-    if (!diary) {
+    if (!rawText) {
       return new Response(
         JSON.stringify({ error: "AI가 빈 응답을 반환했습니다" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
+    const parsed = JSON.parse(rawText);
+    const diary = parsed.ko?.trim() ?? "";
+    const diaryEn = parsed.en?.trim() ?? "";
+
+    if (!diary) {
+      return new Response(
+        JSON.stringify({ error: "AI 응답에서 한국어 일기를 찾을 수 없습니다" }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     return new Response(
-      JSON.stringify({ diary }),
+      JSON.stringify({ diary, diary_en: diaryEn }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
@@ -135,6 +147,7 @@ function buildPrompt(data: DiaryRequest): string {
   const activityBlock = activityLines.join("\n");
 
   return `너는 반려동물이야. 오늘 하루를 1인칭 시점으로 일기를 써줘.
+한국어와 영어 두 버전을 작성해야 해. 영어 버전은 단순 번역이 아니라, 같은 하루를 영어권 말투로 자연스럽게 다시 쓴 것이어야 해.
 
 ## 말투 & 성격
 ${personalityGuide}
@@ -149,6 +162,10 @@ ${activityBlock}
 2. 데이터에 없는 상상의 에피소드를 추가해도 좋아 (예: 창밖을 봤다, 낮잠을 잤다, 간식을 기다렸다 등).
 3. 보호자와의 관계, 일상의 소소한 행복, 오늘의 기분 등을 자연스럽게 녹여줘.
 4. 보호자 메모가 있다면 그 내용을 참고해서 스토리에 살짝 반영해줘. 그대로 인용하지는 마.
-5. 분량은 5~8문장. 너무 길지 않게.
-6. 제목이나 날짜 없이, 일기 본문만 작성해.`;
+5. 분량은 각 언어별 5~8문장. 너무 길지 않게.
+6. 제목이나 날짜 없이, 일기 본문만 작성해.
+
+## 응답 형식
+반드시 아래 JSON 형식으로만 응답해:
+{"ko": "한국어 일기 본문", "en": "English diary body"}`;
 }

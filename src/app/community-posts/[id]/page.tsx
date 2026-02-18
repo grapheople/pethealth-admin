@@ -42,17 +42,25 @@ export default async function CommunityPostDetailPage({ params }: Props) {
           <Section label="게시글 이미지">
             <ImagePreview src={data.image_url} size={200} />
           </Section>
-          {data.summary_date && (
-            <Section label="요약 날짜">{data.summary_date}</Section>
+          {data.write_date && (
+            <Section label="작성 날짜">{data.write_date}</Section>
           )}
         </div>
       </div>
 
-      <Section label="내용">
+      <Section label="내용 (한국어)">
         <p className="text-sm whitespace-pre-wrap rounded-md bg-muted p-4">
           {data.content}
         </p>
       </Section>
+
+      {data.content_en && (
+        <Section label="내용 (English)">
+          <p className="text-sm whitespace-pre-wrap rounded-md bg-muted p-4">
+            {data.content_en}
+          </p>
+        </Section>
+      )}
 
       <div className="text-sm text-muted-foreground">
         생성: {formatDate(data.created_at)}
