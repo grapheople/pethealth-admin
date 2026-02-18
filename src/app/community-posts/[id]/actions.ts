@@ -3,42 +3,43 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-export async function updateMissionCompletion(
-  id: string,
-  formData: FormData
-) {
+export async function updateCommunityPost(id: string, formData: FormData) {
   const supabase = createAdminClient();
 
   const updates: Record<string, unknown> = {};
-  const fields = ["mission_id", "period_key", "user_id"];
+  const fields = [
+    "content",
+    "board_type",
+    "author_display_name",
+    "pet_name",
+  ];
 
   for (const field of fields) {
     const value = formData.get(field);
-    if (value !== null) updates[field] = value;
+    if (value !== null) updates[field] = value || null;
   }
 
   const { error } = await supabase
-    .from("mission_completions")
+    .from("community_posts")
     .update(updates)
     .eq("id", id);
 
   if (error) throw new Error(error.message);
 
-  revalidatePath(`/mission-completions/${id}`);
-  revalidatePath("/mission-completions");
+  revalidatePath(`/community-posts/${id}`);
+  revalidatePath("/community-posts");
 }
 
-export async function deleteMissionCompletion(id: string) {
+export async function deleteCommunityPost(id: string) {
   const supabase = createAdminClient();
 
   const { error } = await supabase
-    .from("mission_completions")
+    .from("community_posts")
     .delete()
     .eq("id", id);
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/mission-completions");
-  redirect("/mission-completions");
+  revalidatePath("/community-posts");
+  redirect("/community-posts");
 }

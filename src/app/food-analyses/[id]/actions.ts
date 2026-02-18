@@ -3,7 +3,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
 export async function updateFoodAnalysis(id: string, formData: FormData) {
   const supabase = createAdminClient();
 
