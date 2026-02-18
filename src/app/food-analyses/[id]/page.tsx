@@ -25,7 +25,7 @@ export default async function FoodAnalysisDetailPage({ params }: Props) {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          {data.product_name ?? "사료 분석 상세"}
+          {data.food_name ?? "사료 분석 상세"}
         </h1>
         <FoodAnalysisActions id={id} data={data} />
       </div>
@@ -36,8 +36,10 @@ export default async function FoodAnalysisDetailPage({ params }: Props) {
             <ImagePreview src={data.image_url} size={200} />
           </Section>
           <Section label="동물 유형">{data.animal_type ?? "-"}</Section>
-          <Section label="사료 유형">{data.food_type ?? "-"}</Section>
-          <Section label="사료명">{data.food_name ?? "-"}</Section>
+          <Section label="음식명">{data.food_name ?? "-"}</Section>
+          {data.food_name_en && (
+            <Section label="Food Name (EN)">{data.food_name_en}</Section>
+          )}
           <Section label="급여량">
             {data.food_amount_g ? `${data.food_amount_g}g` : "-"}
           </Section>
@@ -78,9 +80,16 @@ export default async function FoodAnalysisDetailPage({ params }: Props) {
         <Section label="영양성분">
           <JsonViewer data={data.nutrients} label="영양성분" />
         </Section>
-        <Section label="원재료">
-          <JsonViewer data={data.ingredients} label="원재료" />
-        </Section>
+        <div className="space-y-4">
+          <Section label="원재료">
+            <JsonViewer data={data.ingredients} label="원재료" />
+          </Section>
+          {data.ingredients_en && (
+            <Section label="Ingredients (EN)">
+              <JsonViewer data={data.ingredients_en} label="Ingredients (EN)" />
+            </Section>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">

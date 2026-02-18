@@ -40,7 +40,7 @@ async function getRecentActivity() {
   const [recentFood, recentStool] = await Promise.all([
     supabase
       .from("food_analyses")
-      .select("id, product_name, created_at, overall_rating")
+      .select("id, food_name, created_at, overall_rating")
       .order("created_at", { ascending: false })
       .limit(5),
     supabase
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
                   >
                     <div>
                       <p className="text-sm font-medium">
-                        {item.product_name ?? "이름 없음"}
+                        {item.food_name ?? "이름 없음"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(item.created_at).toLocaleDateString("ko-KR")}

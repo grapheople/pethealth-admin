@@ -10,7 +10,7 @@ import type { Tables } from "@/lib/database.types";
 type FoodAnalysis = Tables<"food_analyses">;
 
 interface Props {
-  searchParams: Promise<{ page?: string; q?: string; animal_type?: string; food_type?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; animal_type?: string }>;
 }
 
 export default async function FoodAnalysesPage({ searchParams }: Props) {
@@ -18,7 +18,6 @@ export default async function FoodAnalysesPage({ searchParams }: Props) {
   const page = Math.max(1, Number(params.page) || 1);
   const q = params.q ?? "";
   const animalType = params.animal_type ?? "";
-  const foodType = params.food_type ?? "";
 
   const supabase = createAdminClient();
   let query = supabase
@@ -27,9 +26,8 @@ export default async function FoodAnalysesPage({ searchParams }: Props) {
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-  if (q) query = query.ilike("product_name", `%${q}%`);
+  if (q) query = query.ilike("food_name", `%${q}%`);
   if (animalType) query = query.eq("animal_type", animalType);
-  if (foodType) query = query.eq("food_type", foodType);
 
   const { data, count } = await query;
   const rows = data ?? [];
@@ -40,14 +38,14 @@ export default async function FoodAnalysesPage({ searchParams }: Props) {
       key: "image",
       header: "이미지",
       className: "w-14",
-      render: (row) => <ImagePreview src={row.image_url} alt={row.product_name ?? "사료"} />,
+      render: (row) => <ImagePreview src={row.image_url} alt={row.food_name ?? "사료"} />,
     },
     {
-      key: "product_name",
-      header: "제품명",
+      key: "food_name",
+      header: "음식명",
       render: (row) => (
         <Link href={`/food-analyses/${row.id}`} className="font-medium hover:underline">
-          {row.product_name ?? "-"}
+          {row.food_name ?? "-"}
         </Link>
       ),
     },
@@ -57,13 +55,7 @@ export default async function FoodAnalysesPage({ searchParams }: Props) {
       className: "w-20",
       render: (row) => row.animal_type ?? "-",
     },
-    {
-      key: "food_type",
-      header: "유형",
-      className: "w-20",
-      render: (row) => row.food_type ?? "-",
-    },
-    {
+{
       key: "overall_rating",
       header: "평점",
       className: "w-20",
@@ -80,14 +72,13 @@ export default async function FoodAnalysesPage({ searchParams }: Props) {
   const filterParams: Record<string, string> = {};
   if (q) filterParams.q = q;
   if (animalType) filterParams.animal_type = animalType;
-  if (foodType) filterParams.food_type = foodType;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">사료 분석</h1>
       </div>
-      <FoodFilters q={q} animalType={animalType} foodType={foodType} />
+      <FoodFilters q={q} animalType={animalType} />
       <DataTable
         columns={columns}
         data={rows}
@@ -104,18 +95,16 @@ export default async function FoodAnalysesPage({ searchParams }: Props) {
 function FoodFilters({
   q,
   animalType,
-  foodType,
 }: {
   q: string;
   animalType: string;
-  foodType: string;
 }) {
   return (
     <form className="flex flex-wrap gap-2">
       <input
         name="q"
         defaultValue={q}
-        placeholder="제품명 검색..."
+        placeholder="음식명 검색..."
         className="h-9 rounded-md border bg-background px-3 text-sm"
       />
       <select
@@ -126,16 +115,6 @@ function FoodFilters({
         <option value="">동물 전체</option>
         <option value="강아지">강아지</option>
         <option value="고양이">고양이</option>
-      </select>
-      <select
-        name="food_type"
-        defaultValue={foodType}
-        className="h-9 rounded-md border bg-background px-3 text-sm"
-      >
-        <option value="">유형 전체</option>
-        <option value="사료">사료</option>
-        <option value="화식">화식</option>
-        <option value="간식">간식</option>
       </select>
       <button
         type="submit"

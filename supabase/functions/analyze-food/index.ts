@@ -54,6 +54,9 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
 반드시 아래 JSON 형식으로만 응답하세요.
 
 {
+  "food_type": "사료",
+  "food_name": "로얄캐닌 미니 인도어 어덜트",
+  "food_name_en": "Royal Canin Mini Indoor Adult",
   "bowl_description": "중형 밥그릇에 약 2/3 정도 채워진 건사료",
   "bowl_description_en": "About 2/3 filled medium bowl of dry kibble",
   "confidence": "medium",
@@ -69,6 +72,9 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
 }
 
 # 규칙
+- food_type: "사료", "화식", "간식" 중 하나
+- food_name: 사료인 경우 브랜드 + 제품명, 화식/간식인 경우 음식 이름 (한국어)
+- food_name_en: food_name의 영어 버전
 - confidence: "high", "medium", "low"
 - nutrients는 100g 기준 값으로 작성
 - nutrients에 protein, fat, carbohydrate, fiber 4개 항목만 포함할것
@@ -85,6 +91,9 @@ ${foodNameHint ? `\n${foodNameHint}\n※ 이 이름은 사료인 경우에만 �
 const FOOD_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
+    food_type: { type: "string", enum: ["사료", "화식", "간식"] },
+    food_name: { type: "string" },
+    food_name_en: { type: "string" },
     bowl_description: { type: "string" },
     bowl_description_en: { type: "string" },
     confidence: { type: "string", enum: ["high", "medium", "low"] },
@@ -119,6 +128,7 @@ const FOOD_RESPONSE_SCHEMA = {
     calories_g: { type: "number" },
   },
   required: [
+    "food_type", "food_name", "food_name_en",
     "bowl_description", "bowl_description_en", "confidence",
     "nutrients", "ingredients", "ingredients_en", "calories_g",
   ],
@@ -211,23 +221,29 @@ Deno.serve(async (req) => {
     }
 
 
-    const displayName = trimmedFoodName || "사료";
-
     const confidenceLabel = geminiResult.confidence || "medium";
-    const displayNameEn = trimmedFoodName || "pet food";
+    const aiFoodType = geminiResult.food_type || "사료";
+
+    // 사료이고 사용자가 이름을 입력했으면 사용자 입력 사용, 아니면 AI 판단 사용
+    const resolvedFoodName = (aiFoodType === "사료" && trimmedFoodName)
+      ? trimmedFoodName
+      : geminiResult.food_name || trimmedFoodName || "알 수 없는 음식";
+    const resolvedFoodNameEn = (aiFoodType === "사료" && trimmedFoodName)
+      ? trimmedFoodName
+      : geminiResult.food_name_en || "Unknown food";
 
     analysisResult = {
-      product_name: trimmedFoodName,
       animal_type: null,
-      food_type: null,
-      food_name: trimmedFoodName,
+      food_name: resolvedFoodName,
+      food_name_en: resolvedFoodNameEn,
       food_amount_g: parsedAmountG,
       calories_g: geminiResult.calories_g || 0,
       nutrients: ratedNutrients,
       ingredients: geminiResult.ingredients || [],
+      ingredients_en: geminiResult.ingredients_en || [],
       overall_rating: 6,
-      rating_summary: `"${displayName}" 사료의 영양성분을 AI가 추정하였습니다. 신뢰도: ${confidenceLabel}.`,
-      rating_summary_en: `Nutritional analysis of "${displayNameEn}" estimated by AI. Confidence: ${confidenceLabel}.`,
+      rating_summary: `"${resolvedFoodName}"의 영양성분을 AI가 추정하였습니다. 신뢰도: ${confidenceLabel}.`,
+      rating_summary_en: `Nutritional analysis of "${resolvedFoodNameEn}" estimated by AI. Confidence: ${confidenceLabel}.`,
       recommendations: `${geminiResult.bowl_description || ""}`,
       recommendations_en: `${geminiResult.bowl_description_en || ""}`,
     };
@@ -238,14 +254,14 @@ Deno.serve(async (req) => {
       .insert({
         image_url: imageUrl,
         image_storage_path: storagePath,
-        product_name: analysisResult.product_name,
         animal_type: analysisResult.animal_type,
-        food_type: analysisResult.food_type,
         food_name: analysisResult.food_name,
+        food_name_en: analysisResult.food_name_en,
         food_amount_g: analysisResult.food_amount_g,
         calories_g: analysisResult.calories_g,
         nutrients: analysisResult.nutrients,
         ingredients: analysisResult.ingredients,
+        ingredients_en: analysisResult.ingredients_en,
         overall_rating: analysisResult.overall_rating,
         rating_summary: analysisResult.rating_summary,
         rating_summary_en: analysisResult.rating_summary_en,

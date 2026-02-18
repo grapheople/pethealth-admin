@@ -8,9 +8,7 @@ export async function updateFoodAnalysis(id: string, formData: FormData) {
 
   const updates: Record<string, unknown> = {};
   const fields = [
-    "product_name",
     "animal_type",
-    "food_type",
     "food_name",
     "rating_summary",
     "recommendations",

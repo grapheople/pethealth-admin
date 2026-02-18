@@ -18,14 +18,14 @@ export interface ConcerningIngredient {
 }
 
 export interface FoodAnalysisResult {
-  product_name: string | null;
   animal_type: string | null;
-  food_type: string | null;
-  food_name: string | null;
+  food_name: string;
+  food_name_en: string;
   food_amount_g: number | null;
   calories_g: number;
   nutrients: Record<string, NutrientInfo>;
   ingredients: string[];
+  ingredients_en: string[];
   overall_rating: number;
   rating_summary: string;
   rating_summary_en: string;
@@ -35,6 +35,9 @@ export interface FoodAnalysisResult {
 
 // --- Gemini 급여량 + 영양조사 응답 ---
 export interface PortionWithNutrients {
+  food_type: string;
+  food_name: string;
+  food_name_en: string;
   bowl_description: string;
   bowl_description_en: string;
   confidence: string;

@@ -81,12 +81,8 @@ export function FoodAnalysisActions({
             <DialogTitle>사료 분석 수정</DialogTitle>
           </DialogHeader>
           <form action={handleEdit} className="space-y-4">
-            <Field label="제품명" name="product_name" defaultValue={data.product_name ?? ""} />
-            <Field label="사료명" name="food_name" defaultValue={data.food_name ?? ""} />
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="동물 유형" name="animal_type" defaultValue={data.animal_type ?? ""} />
-              <Field label="사료 유형" name="food_type" defaultValue={data.food_type ?? ""} />
-            </div>
+            <Field label="음식명" name="food_name" defaultValue={data.food_name ?? ""} />
+            <Field label="동물 유형" name="animal_type" defaultValue={data.animal_type ?? ""} />
             <div className="grid grid-cols-3 gap-4">
               <Field label="평점 (1-10)" name="overall_rating" type="number" defaultValue={String(data.overall_rating ?? "")} />
               <Field label="칼로리" name="calories_g" type="number" defaultValue={String(data.calories_g)} />
