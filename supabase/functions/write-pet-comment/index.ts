@@ -52,6 +52,14 @@ Deno.serve(async (req) => {
           topK: 40,
           maxOutputTokens: 600,
           responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              ko: { type: "string", description: "한국어 댓글" },
+              en: { type: "string", description: "English comment" },
+            },
+            required: ["ko", "en"],
+          },
         },
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },

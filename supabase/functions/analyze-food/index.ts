@@ -12,7 +12,7 @@ function buildFullAnalysisPrompt(foodName: string | null, foodAmountG: number | 
   const foodNameHint = foodName
     ? `사용자가 입력한 사료 이름: "${foodName}"`
     : "";
-  const amountHint = foodAmountG
+  const amountHint = (foodName && foodAmountG)
     ? `사용자가 입력한 급여량: ${foodAmountG}g`
     : "";
 
@@ -29,7 +29,7 @@ function buildFullAnalysisPrompt(foodName: string | null, foodAmountG: number | 
 - **간식**: 저키, 덴탈껌, 과일/채소 조각, 간식용 트릿 등
 
 ## 2단계: 양(그램) 추정
-${foodAmountG ? `${amountHint}
+${(foodName && foodAmountG) ? `${amountHint}
 이 값을 그대로 food_amount_g에 사용하고 bowl_description에 반영하세요.` : `이미지에서 음식의 양(g)을 추정하여 반드시 food_amount_g에 숫자로 작성하세요.
 
 참고 기준:

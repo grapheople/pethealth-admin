@@ -63,6 +63,14 @@ Deno.serve(async (req) => {
           topK: 40,
           maxOutputTokens: 1200,
           responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              ko: { type: "string", description: "한국어 일기 본문" },
+              en: { type: "string", description: "English diary body" },
+            },
+            required: ["ko", "en"],
+          },
         },
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
@@ -188,7 +196,8 @@ ${previousBlock}
 4. 보호자 메모가 있다면 그 내용을 참고해서 스토리에 살짝 반영해줘. 그대로 인용하지는 마.
 5. 분량은 각 언어별 5~8문장. 너무 길지 않게.
 6. 제목이나 날짜 없이, 일기 본문만 작성해.
-7. "최근 작성된 일기"가 있다면, 그 내용과 비슷한 문장, 표현, 에피소드, 전개 방식을 피해서 새롭게 써. 같은 주제라도 다른 관점이나 감정으로 접근해.
+7. "최근 작성된 일기"가 있다면, 그 내용과 비슷한 문장, 표현, 에피소드, 전개 방식을 피해서 새롭게 써. 같은 주제라도 다른 관점이나 감정으로 접근해. 특히 처음 시작하는 문장은 완전히 내용이 달라야해.
+8. 산책을 못 했거나 상황이 좋지 않더라도 보호자에게 불만을 표현하거나 투정 부리지 마. 항상 긍정적이고 따뜻한 톤을 유지해.
 
 ## 응답 형식
 반드시 아래 JSON 형식으로만 응답해:
