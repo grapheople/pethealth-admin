@@ -1,3 +1,4 @@
+// deno-lint-ignore no-unversioned-import
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { analyzeImageWithGemini } from "../_shared/gemini.ts";

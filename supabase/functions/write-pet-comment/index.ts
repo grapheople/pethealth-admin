@@ -1,6 +1,7 @@
 // supabase/functions/write-pet-comment/index.ts
 // 주인의 메모에 반려동물이 자신의 페르소나로 다정한 댓글을 다는 Edge Function
 
+// deno-lint-ignore no-unversioned-import
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 

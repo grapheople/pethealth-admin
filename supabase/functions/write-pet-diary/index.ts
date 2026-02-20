@@ -1,6 +1,7 @@
 // supabase/functions/write-pet-diary/index.ts
 // 반려동물 시점의 자연스러운 AI 일기를 생성하는 Edge Function
 
+// deno-lint-ignore no-unversioned-import
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 

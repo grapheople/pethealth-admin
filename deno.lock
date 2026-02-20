@@ -1,0 +1,43 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@supabase/functions-js@2.4.1": "2.4.1",
+    "jsr:@supabase/functions-js@2.4.3": "2.4.3"
+  },
+  "jsr": {
+    "@supabase/functions-js@2.4.1": {
+      "integrity": "62e776ec3b5468ec869224d1763efe7a973ade5318a06d35b2828d20d96b4f1b"
+    },
+    "@supabase/functions-js@2.4.3": {
+      "integrity": "010834c9e7d2996b4be8e4004a15ed8f42b326490e4b354683f9c191353b76cc"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@supabase/supabase-js@^2.96.0",
+        "npm:@tailwindcss/postcss@4",
+        "npm:@types/node@20",
+        "npm:@types/react-dom@19",
+        "npm:@types/react@19",
+        "npm:class-variance-authority@~0.7.1",
+        "npm:clsx@^2.1.1",
+        "npm:dotenv@^17.3.1",
+        "npm:eslint-config-next@16.1.6",
+        "npm:eslint@9",
+        "npm:lucide-react@0.574",
+        "npm:next-themes@~0.4.6",
+        "npm:next@16.1.6",
+        "npm:radix-ui@^1.4.3",
+        "npm:react-dom@19.2.3",
+        "npm:react@19.2.3",
+        "npm:shadcn@^3.8.5",
+        "npm:sonner@^2.0.7",
+        "npm:tailwind-merge@^3.4.1",
+        "npm:tailwindcss@4",
+        "npm:tw-animate-css@^1.4.0",
+        "npm:typescript@5"
+      ]
+    }
+  }
+}
