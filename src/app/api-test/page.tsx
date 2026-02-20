@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-type Tab = "food" | "stool" | "diary";
+type Tab = "food" | "stool" | "diary" | "comment";
 
 export default function ApiTestPage() {
   const [activeTab, setActiveTab] = useState<Tab>("food");
@@ -20,6 +20,7 @@ export default function ApiTestPage() {
     { key: "food", label: "사료 분석" },
     { key: "stool", label: "배변 분석" },
     { key: "diary", label: "일기 생성" },
+    { key: "comment", label: "댓글 생성" },
   ];
 
   return (
@@ -44,6 +45,7 @@ export default function ApiTestPage() {
       {activeTab === "food" && <AnalyzeFoodTest />}
       {activeTab === "stool" && <AnalyzeStoolTest />}
       {activeTab === "diary" && <WriteDiaryTest />}
+      {activeTab === "comment" && <WriteCommentTest />}
     </div>
   );
 }
@@ -180,11 +182,17 @@ function AnalyzeStoolTest() {
     setLoading(true);
     setResult(null);
     try {
+      const formData = new FormData(e.currentTarget);
       const imageBase64 = await fileToBase64(file);
-      const res = await callEdgeFunction("analyze-stool", {
+      const animalType = formData.get("animal_type") as string;
+
+      const body: Record<string, unknown> = {
         image_base64: imageBase64,
         mime_type: file.type || "image/jpeg",
-      });
+      };
+      if (animalType) body.animal_type = animalType;
+
+      const res = await callEdgeFunction("analyze-stool", body);
       setResult(res);
     } finally {
       setLoading(false);
@@ -206,6 +214,18 @@ function AnalyzeStoolTest() {
               accept="image/*"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
+          </div>
+          <div>
+            <Label htmlFor="animal_type">동물 타입 (선택)</Label>
+            <select
+              id="animal_type"
+              name="animal_type"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+            >
+              <option value="">자동 감지</option>
+              <option value="dog">강아지</option>
+              <option value="cat">고양이</option>
+            </select>
           </div>
           <Button type="submit" disabled={loading || !file}>
             {loading && <Loader2 className="size-4 animate-spin" />}
@@ -242,13 +262,16 @@ function WriteDiaryTest() {
         ? walkMemosRaw.split("\n").filter(Boolean)
         : [];
 
-      const body = {
+      const personalityDescription = (formData.get("personalityDescription") as string).trim();
+
+      const body: Record<string, unknown> = {
         personalityNames,
         totalWalkMin: Number(formData.get("totalWalkMin")) || 0,
         totalSteps: Number(formData.get("totalSteps")) || 0,
         foodNames,
         walkMemos,
       };
+      if (personalityDescription) body.personalityDescription = personalityDescription;
 
       const res = await callEdgeFunction("write-pet-diary", body);
       setResult(res);
@@ -265,11 +288,20 @@ function WriteDiaryTest() {
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="personalityNames">성격 (쉼표 구분)</Label>
+            <Label htmlFor="personalityNames">성격 키워드 (쉼표 구분)</Label>
             <Input
               id="personalityNames"
               name="personalityNames"
               placeholder="예: 활발한, 호기심 많은, 겁쟁이"
+            />
+          </div>
+          <div>
+            <Label htmlFor="personalityDescription">성격 상세 설명 (선택)</Label>
+            <Textarea
+              id="personalityDescription"
+              name="personalityDescription"
+              rows={2}
+              placeholder="예: 산책을 정말 좋아하고 다른 강아지를 보면 꼬리를 흔들며 다가가는 성격"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -312,6 +344,95 @@ function WriteDiaryTest() {
           <Button type="submit" disabled={loading}>
             {loading && <Loader2 className="size-4 animate-spin" />}
             {loading ? "생성 중..." : "일기 생성"}
+          </Button>
+        </form>
+        <ResultDisplay result={result} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function WriteCommentTest() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ status: number; data: unknown } | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const personalityNames = (formData.get("commentPersonalityNames") as string)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const personalityDescription = (formData.get("commentPersonalityDescription") as string).trim();
+      const memo = (formData.get("memo") as string).trim();
+      const petName = (formData.get("petName") as string).trim();
+      const ownerNickname = (formData.get("ownerNickname") as string).trim();
+
+      const body: Record<string, unknown> = {
+        memo,
+        personalityNames,
+      };
+      if (personalityDescription) body.personalityDescription = personalityDescription;
+      if (petName) body.petName = petName;
+      if (ownerNickname) body.ownerNickname = ownerNickname;
+
+      const res = await callEdgeFunction("write-pet-comment", body);
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">POST /functions/v1/write-pet-comment</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="memo">보호자 메모 (필수)</Label>
+            <Textarea
+              id="memo"
+              name="memo"
+              rows={3}
+              placeholder="예: 오늘 회사에서 힘든 일이 있었어"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="petName">반려동물 이름 (선택)</Label>
+              <Input id="petName" name="petName" placeholder="예: 초코" />
+            </div>
+            <div>
+              <Label htmlFor="ownerNickname">보호자 호칭 (선택)</Label>
+              <Input id="ownerNickname" name="ownerNickname" placeholder="예: 엄마" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="commentPersonalityNames">성격 키워드 (쉼표 구분)</Label>
+            <Input
+              id="commentPersonalityNames"
+              name="commentPersonalityNames"
+              placeholder="예: 활발한, 애교많은"
+            />
+          </div>
+          <div>
+            <Label htmlFor="commentPersonalityDescription">성격 상세 설명 (선택)</Label>
+            <Textarea
+              id="commentPersonalityDescription"
+              name="commentPersonalityDescription"
+              rows={2}
+              placeholder="예: 주인이 집에 오면 항상 신발을 물어오는 다정한 성격"
+            />
+          </div>
+          <Button type="submit" disabled={loading || false}>
+            {loading && <Loader2 className="size-4 animate-spin" />}
+            {loading ? "생성 중..." : "댓글 생성"}
           </Button>
         </form>
         <ResultDisplay result={result} />

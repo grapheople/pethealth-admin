@@ -25,7 +25,7 @@ interface DataTableProps<T> {
   searchParams?: Record<string, string>;
 }
 
-export function DataTable<T extends { id: string }>({
+export function DataTable<T extends { id: string | number }>({
   columns,
   data,
   totalCount,

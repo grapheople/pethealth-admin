@@ -4,6 +4,8 @@ import {
   Activity,
   MessageSquare,
   Trophy,
+  Users,
+  Dog,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -11,7 +13,13 @@ import { createAdminClient } from "@/lib/supabase/server";
 async function getStats() {
   const supabase = createAdminClient();
 
-  const [food, stool, posts, missions] = await Promise.all([
+  const [users, pets, food, stool, posts, missions] = await Promise.all([
+    supabase
+      .from("users")
+      .select("*", { count: "exact", head: true }),
+    supabase
+      .from("pet_profiles")
+      .select("*", { count: "exact", head: true }),
     supabase
       .from("food_analyses")
       .select("*", { count: "exact", head: true }),
@@ -27,6 +35,8 @@ async function getStats() {
   ]);
 
   return {
+    usersCount: users.count ?? 0,
+    petsCount: pets.count ?? 0,
     foodCount: food.count ?? 0,
     stoolCount: stool.count ?? 0,
     postsCount: posts.count ?? 0,
@@ -62,6 +72,18 @@ export default async function DashboardPage() {
 
   const cards = [
     {
+      title: "사용자",
+      count: stats.usersCount,
+      icon: Users,
+      href: "/users",
+    },
+    {
+      title: "반려동물",
+      count: stats.petsCount,
+      icon: Dog,
+      href: "/pet-profiles",
+    },
+    {
       title: "사료 분석",
       count: stats.foodCount,
       icon: UtensilsCrossed,
@@ -91,7 +113,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">대시보드</h1>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <Link key={card.href} href={card.href}>
             <Card className="hover:bg-accent/50 transition-colors">
