@@ -10,11 +10,13 @@ const GEMINI_URL =
 
 interface DiaryRequest {
   personalityNames: string[];
+  personalityDescription?: string;
   totalWalkMin: number;
   totalSteps: number;
   foodNames: string[];
   walkMemos?: string[];
   foodMemos?: string[];
+  previousDiaries?: string[];
 }
 
 Deno.serve(async (req) => {
@@ -47,6 +49,8 @@ Deno.serve(async (req) => {
       foodNames,
       walkMemos,
     });
+
+    console.log("[write-pet-diary] Prompt:", prompt);
 
     const geminiRes = await fetch(GEMINI_URL, {
       method: "POST",
@@ -81,6 +85,8 @@ Deno.serve(async (req) => {
     const geminiData = await geminiRes.json();
     const rawText =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+
+    console.log("[write-pet-diary] AI response:", rawText);
 
     if (!rawText) {
       return new Response(
@@ -117,16 +123,22 @@ Deno.serve(async (req) => {
 function buildPrompt(data: DiaryRequest): string {
   const {
     personalityNames,
+    personalityDescription,
     totalWalkMin,
     totalSteps,
     foodNames,
     walkMemos = [],
-    foodMemos=[],
+    foodMemos = [],
+    previousDiaries = [],
   } = data;
 
   const personalityGuide = personalityNames.length > 0
     ? `이 아이의 성격: ${personalityNames.join(", ")}. 이 성격이 말투와 생각에 자연스럽게 드러나야 해.`
     : "평범하고 밝은 강아지 말투로 써줘.";
+
+  const descriptionGuide = personalityDescription
+    ? `\n성격 상세: ${personalityDescription}`
+    : "";
 
   const activityLines: string[] = [];
 
@@ -154,17 +166,21 @@ function buildPrompt(data: DiaryRequest): string {
 
   const activityBlock = activityLines.join("\n");
 
+  const previousBlock = previousDiaries.length > 0
+    ? `\n## 최근 작성된 일기 (중복 방지용)\n${previousDiaries.map((d, i) => `${i + 1}. "${d}"`).join("\n")}\n`
+    : "";
+
   return `너는 반려동물이야. 오늘 하루를 1인칭 시점으로 일기를 써줘.
 한국어와 영어 두 버전을 작성해야 해. 영어 버전은 단순 번역이 아니라, 같은 하루를 영어권 말투로 자연스럽게 다시 쓴 것이어야 해.
 
 ## 말투 & 성격
-${personalityGuide}
+${personalityGuide}${descriptionGuide}
 - 너무 유아적이지 않고 자연스럽게 읽히도록.
 - 이모지는 쓰지 마.
 
 ## 오늘의 참고 데이터
 ${activityBlock}
-
+${previousBlock}
 ## 작성 규칙
 1. 위 데이터를 모두 나열하지 않아도 돼. 영감을 받아 자유롭게 써.
 2. 데이터에 없는 상상의 에피소드를 추가해도 좋아 (예: 창밖을 봤다, 낮잠을 잤다, 간식을 기다렸다 등).
@@ -172,6 +188,7 @@ ${activityBlock}
 4. 보호자 메모가 있다면 그 내용을 참고해서 스토리에 살짝 반영해줘. 그대로 인용하지는 마.
 5. 분량은 각 언어별 5~8문장. 너무 길지 않게.
 6. 제목이나 날짜 없이, 일기 본문만 작성해.
+7. "최근 작성된 일기"가 있다면, 그 내용과 비슷한 문장, 표현, 에피소드, 전개 방식을 피해서 새롭게 써. 같은 주제라도 다른 관점이나 감정으로 접근해.
 
 ## 응답 형식
 반드시 아래 JSON 형식으로만 응답해:
