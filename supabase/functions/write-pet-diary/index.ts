@@ -12,6 +12,8 @@ const GEMINI_URL =
 interface DiaryRequest {
   personalityNames: string[];
   personalityDescription?: string;
+  petSpecies?: string;
+  ownerNickname?: string;
   totalWalkMin: number;
   totalSteps: number;
   foodNames: string[];
@@ -133,6 +135,8 @@ function buildPrompt(data: DiaryRequest): string {
   const {
     personalityNames,
     personalityDescription,
+    petSpecies,
+    ownerNickname,
     totalWalkMin,
     totalSteps,
     foodNames,
@@ -141,20 +145,24 @@ function buildPrompt(data: DiaryRequest): string {
     previousDiaries = [],
   } = data;
 
+  const speciesLabel = petSpecies ? petSpecies : "dog";
+
   const personalityGuide = personalityNames.length > 0
     ? `이 아이의 성격: ${personalityNames.join(", ")}. 이 성격이 말투와 생각에 자연스럽게 드러나야 해.`
-    : "평범하고 밝은 강아지 말투로 써줘.";
+    : `평범하고 밝은 ${speciesLabel} 말투로 써줘.`;
 
   const descriptionGuide = personalityDescription
     ? `\n성격 상세: ${personalityDescription}`
+    : "";
+
+  const ownerGuide = ownerNickname
+    ? `\n보호자 호칭: "${ownerNickname}" (일기에서 보호자를 부를 때 이 호칭을 사용해)`
     : "";
 
   const activityLines: string[] = [];
 
   if (totalWalkMin > 0) {
     activityLines.push(`- 산책: ${totalWalkMin}분, ${totalSteps}걸음`);
-  } else {
-    activityLines.push("- 오늘은 산책을 하지 않았어");
   }
 
   if (foodNames.length > 0) {
@@ -179,11 +187,11 @@ function buildPrompt(data: DiaryRequest): string {
     ? `\n## 최근 작성된 일기 (중복 방지용)\n${previousDiaries.map((d, i) => `${i + 1}. "${d}"`).join("\n")}\n`
     : "";
 
-  return `너는 반려동물이야. 오늘 하루를 1인칭 시점으로 일기를 써줘.
+  return `너는 ${speciesLabel}야. 오늘 하루를 1인칭 시점으로 일기를 써줘.
 한국어와 영어 두 버전을 작성해야 해. 영어 버전은 단순 번역이 아니라, 같은 하루를 영어권 말투로 자연스럽게 다시 쓴 것이어야 해.
 
 ## 말투 & 성격
-${personalityGuide}${descriptionGuide}
+${personalityGuide}${descriptionGuide}${ownerGuide}
 - 너무 유아적이지 않고 자연스럽게 읽히도록.
 - 이모지는 쓰지 마.
 
