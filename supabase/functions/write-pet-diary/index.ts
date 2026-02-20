@@ -29,29 +29,18 @@ Deno.serve(async (req) => {
 
   try {
     const body: DiaryRequest = await req.json();
-    const {
-      personalityNames,
-      totalWalkMin,
-      totalSteps,
-      foodNames,
-      walkMemos = [],
-    } = body;
 
     // 입력 검증
-    if (!Array.isArray(personalityNames) || !Array.isArray(foodNames)) {
+    if (!Array.isArray(body.personalityNames) || !Array.isArray(body.foodNames)) {
       return new Response(
         JSON.stringify({ error: "personalityNames, foodNames는 배열이어야 합니다" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const prompt = buildPrompt({
-      personalityNames,
-      totalWalkMin,
-      totalSteps,
-      foodNames,
-      walkMemos,
-    });
+    const prompt = buildPrompt(body);
+
+    console.log("[write-pet-diary] Body:", body);
 
     console.log("[write-pet-diary] Prompt:", prompt);
 
