@@ -4,11 +4,14 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { analyzeImageWithGemini } from "../_shared/gemini.ts";
 import type { ApiResponse, StoolAnalysisResult } from "../_shared/types.ts";
 
-const STOOL_ANALYSIS_PROMPT = `# 역할
-당신은 15년 경력의 수의학 전문가로, 반려동물 대변 상태를 통해 건강을 정확히 평가합니다.
+function buildStoolPrompt(animalType?: string): string {
+  const animalLabel = animalType === "cat" ? "고양이" : animalType === "dog" ? "강아지" : "반려동물";
+
+  return `# 역할
+당신은 15년 경력의 수의학 전문가로, ${animalLabel} 대변 상태를 통해 건강을 정확히 평가합니다.
 
 # 작업
-제공된 반려동물 대변 이미지를 관찰하고 건강 상태를 평가하세요.
+제공된 ${animalLabel} 대변 이미지를 관찰하고 건강 상태를 평가하세요.
 
 # 분석 단계
 1단계: 대변의 색상을 관찰하세요 (갈색, 진한갈색, 검정, 노란색, 빨간색, 흰색, 녹색, 주황색 등).
@@ -76,6 +79,7 @@ const STOOL_ANALYSIS_PROMPT = `# 역할
 - _en 접미사가 붙은 필드는 동일한 내용을 영어로 작성하세요.
 - 한국어 필드와 영어 필드를 모두 반드시 작성하세요.
 - JSON만 출력하세요. 설명, 마크다운, 코드블록 기호는 포함하지 마세요.`;
+}
 
 const STOOL_RESPONSE_SCHEMA = {
   type: "object",
@@ -88,7 +92,7 @@ const STOOL_RESPONSE_SCHEMA = {
     consistency_assessment: { type: "string" },
     consistency_assessment_en: { type: "string" },
     shape: { type: "string" },
-    size: { type: "string" },
+    
     has_blood: { type: "boolean" },
     has_mucus: { type: "boolean" },
     has_foreign_objects: { type: "boolean" },
@@ -121,7 +125,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { image_base64, mime_type = "image/jpeg" } = await req.json();
+    const { image_base64, mime_type = "image/jpeg", animal_type } = await req.json();
 
     if (!image_base64) {
       return new Response(
@@ -140,7 +144,7 @@ Deno.serve(async (req) => {
     const analysisResult = (await analyzeImageWithGemini({
       imageBase64: image_base64,
       mimeType: mime_type,
-      prompt: STOOL_ANALYSIS_PROMPT,
+      prompt: buildStoolPrompt(animal_type),
       responseSchema: STOOL_RESPONSE_SCHEMA,
     })) as unknown as StoolAnalysisResult;
 
