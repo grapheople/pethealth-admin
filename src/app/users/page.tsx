@@ -71,6 +71,13 @@ export default async function UsersPage({ searchParams }: Props) {
       render: (row) => row.providers || "-",
     },
     {
+      key: "is_admin",
+      header: "관리자",
+      className: "w-20",
+      render: (row) =>
+        row.is_admin ? <Badge variant="default">관리자</Badge> : null,
+    },
+    {
       key: "status",
       header: "상태",
       className: "w-24",

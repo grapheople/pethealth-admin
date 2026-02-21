@@ -5,6 +5,7 @@ import { formatDate } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
+import { IsAdminToggle } from "./client";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -61,6 +62,10 @@ export default async function UserDetailPage({ params }: Props) {
             <div className="flex items-center justify-between py-1">
               <span className="text-sm text-muted-foreground">상태</span>
               <Badge variant={statusColor[user.status] ?? "default"}>{user.status}</Badge>
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-sm text-muted-foreground">관리자</span>
+              <IsAdminToggle userId={user.id} defaultValue={user.is_admin} />
             </div>
             <Row label="경험치" value={user.total_exp.toLocaleString()} />
             <Row label="포인트" value={user.total_points.toLocaleString()} />

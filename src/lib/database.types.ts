@@ -230,6 +230,7 @@ export interface Database {
           email: string | null;
           phone: string | null;
           status: string;
+          is_admin: boolean;
           total_exp: number;
           total_points: number;
           total_gems: number;
@@ -244,6 +245,7 @@ export interface Database {
           email?: string | null;
           phone?: string | null;
           status?: string;
+          is_admin?: boolean;
           total_exp?: number;
           total_points?: number;
           total_gems?: number;
@@ -258,6 +260,7 @@ export interface Database {
           email?: string | null;
           phone?: string | null;
           status?: string;
+          is_admin?: boolean;
           total_exp?: number;
           total_points?: number;
           total_gems?: number;
@@ -417,6 +420,36 @@ export interface Database {
           rewards?: Json;
           is_claimed?: boolean;
           claimed_at?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+      };
+      notices: {
+        Row: {
+          id: number;
+          title_ko: string;
+          title_en: string;
+          body_ko: string;
+          body_en: string;
+          router_link: string;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          title_ko: string;
+          title_en?: string;
+          body_ko?: string;
+          body_en?: string;
+          router_link?: string;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          title_ko?: string;
+          title_en?: string;
+          body_ko?: string;
+          body_en?: string;
+          router_link?: string;
           expires_at?: string | null;
           created_at?: string;
         };

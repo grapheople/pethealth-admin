@@ -9,6 +9,7 @@ import {
   Coins,
   Gem,
   Mail,
+  Megaphone,
 } from "lucide-react";
 
 export const PAGE_SIZE = 20;
@@ -23,5 +24,6 @@ export const NAV_ITEMS = [
   { href: "/stool-analyses", label: "배변 분석", icon: Activity },
   { href: "/community-posts", label: "커뮤니티", icon: MessageSquare },
   { href: "/user-mails", label: "우편함", icon: Mail },
+  { href: "/notices", label: "공지사항", icon: Megaphone },
   { href: "/api-test", label: "엣지펑션 테스트", icon: FlaskConical },
 ] as const;
