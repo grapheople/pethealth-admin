@@ -36,8 +36,8 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-SUPABASE_URL=$(grep '^SUPABASE_URL=' "$ENV_FILE" | cut -d '=' -f2- | tr -d "'" | tr -d '"')
-ANON_KEY=$(grep '^SUPABASE_ANON_KEY=' "$ENV_FILE" | cut -d '=' -f2- | tr -d "'" | tr -d '"')
+SUPABASE_URL=$(grep '^NEXT_PUBLIC_SUPABASE_URL=' "$ENV_FILE" | cut -d '=' -f2- | tr -d "'" | tr -d '"')
+ANON_KEY=$(grep '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' "$ENV_FILE" | cut -d '=' -f2- | tr -d "'" | tr -d '"')
 
 # MIME 타입 판별
 EXT="${IMAGE_PATH##*.}"

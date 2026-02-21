@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PawPrint } from "lucide-react";
+import { LogOut, PawPrint } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { logout } from "@/app/login/actions";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -38,6 +39,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="border-t p-2">
+        <button
+          onClick={() => logout()}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <LogOut className="size-4" />
+          로그아웃
+        </button>
+      </div>
     </aside>
   );
 }
