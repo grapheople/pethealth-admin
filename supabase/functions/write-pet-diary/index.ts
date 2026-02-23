@@ -19,6 +19,8 @@ interface DiaryRequest {
   foodNames: string[];
   walkMemos?: string[];
   foodMemos?: string[];
+  groomingRecords?: string[];
+  checkupRecords?: string[];
   previousDiaries?: string[];
 }
 
@@ -131,6 +133,8 @@ function buildPrompt(data: DiaryRequest): string {
     foodNames,
     walkMemos = [],
     foodMemos = [],
+    groomingRecords = [],
+    checkupRecords = [],
     previousDiaries = [],
   } = data;
 
@@ -168,6 +172,14 @@ function buildPrompt(data: DiaryRequest): string {
     activityLines.push(
       `- 보호자가 남긴 활동메모: ${walkMemos.map((m) => `"${m}"`).join(", ")}`,
     );
+  }
+
+  if (groomingRecords.length > 0) {
+    activityLines.push(`- 미용 기록: ${groomingRecords.join(", ")}`);
+  }
+
+  if (checkupRecords.length > 0) {
+    activityLines.push(`- 검진 기록: ${checkupRecords.join(", ")}`);
   }
 
   const activityBlock = activityLines.join("\n");
