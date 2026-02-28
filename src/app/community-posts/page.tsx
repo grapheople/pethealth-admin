@@ -56,7 +56,12 @@ export default async function CommunityPostsPage({ searchParams }: Props) {
       key: "author",
       header: "작성자",
       className: "w-28",
-      render: (row) => row.author_display_name,
+      render: (row) => (
+        <span>
+          {row.author_display_name}
+          {row.is_anonymous && <Badge variant="secondary" className="ml-1 text-[10px]">익명</Badge>}
+        </span>
+      ),
     },
     {
       key: "pet_name",

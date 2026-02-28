@@ -32,10 +32,17 @@ export default async function CommunityPostDetailPage({ params }: Props) {
           <Section label="게시판">
             <Badge variant="outline">{data.board_type}</Badge>
           </Section>
-          <Section label="작성자">{data.author_display_name}</Section>
-          <Section label="반려동물 이름">{data.pet_name}</Section>
-          <Section label="반려동물 사진">
-            <ImagePreview src={data.pet_photo_url} size={80} />
+          <Section label="작성자">
+            {data.author_display_name}
+            {data.is_anonymous && <Badge variant="secondary" className="ml-2">익명</Badge>}
+          </Section>
+          <Section label="반려동물 이름">
+            {data.pet_name}
+            {data.pet_species && (
+              <Badge variant="outline" className="ml-2">
+                {data.pet_species === "dog" ? "강아지" : data.pet_species === "cat" ? "고양이" : data.pet_species}
+              </Badge>
+            )}
           </Section>
         </div>
         <div className="space-y-4">

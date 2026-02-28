@@ -77,7 +77,9 @@ export default async function PetProfileDetailPage({ params }: Props) {
             <CardContent className="space-y-3">
               <Row label="사료 브랜드" value={pet.food_brand} />
               <Row label="급여량" value={pet.food_amount_g ? `${pet.food_amount_g}g` : null} />
+              <Row label="100g당 칼로리" value={pet.food_cal_per_100g ? `${pet.food_cal_per_100g}kcal` : null} />
               <Row label="성격 태그" value={pet.personality_tags} />
+              <Row label="성격 설명" value={pet.personality_description} />
             </CardContent>
           </Card>
 
@@ -87,6 +89,7 @@ export default async function PetProfileDetailPage({ params }: Props) {
             </CardHeader>
             <CardContent className="space-y-3">
               <Row label="보호자명(앱)" value={pet.owner_name} />
+              <Row label="보호자 호칭" value={pet.owner_nickname} />
               {owner ? (
                 <>
                   <Row label="계정 이름" value={owner.name} />

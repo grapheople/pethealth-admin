@@ -70,6 +70,10 @@ export default async function UserDetailPage({ params }: Props) {
             <Row label="경험치" value={user.total_exp.toLocaleString()} />
             <Row label="포인트" value={user.total_points.toLocaleString()} />
             <Row label="젬" value={user.total_gems.toLocaleString()} />
+            <Row label="연속 출석" value={`${user.streak_current}일 (최고 ${user.streak_longest}일)`} />
+            {user.streak_last_date && (
+              <Row label="마지막 출석" value={user.streak_last_date} />
+            )}
             {user.membership_expires_at && (
               <Row label="멤버십 만료" value={formatDate(user.membership_expires_at)} />
             )}

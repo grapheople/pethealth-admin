@@ -160,62 +160,112 @@ export interface Database {
       community_posts: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: number;
           board_type: string;
           pet_name: string;
           pet_photo_url: string | null;
+          pet_species: string | null;
+          pet_profile_id: number | null;
           author_display_name: string;
           content: string;
           content_en: string | null;
           image_url: string | null;
+          is_anonymous: boolean;
+          latitude: number | null;
+          longitude: number | null;
           write_date: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id: number;
           board_type: string;
           pet_name?: string;
           pet_photo_url?: string | null;
+          pet_species?: string | null;
+          pet_profile_id?: number | null;
           author_display_name?: string;
           content: string;
           content_en?: string | null;
           image_url?: string | null;
+          is_anonymous?: boolean;
+          latitude?: number | null;
+          longitude?: number | null;
           write_date?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: number;
           board_type?: string;
           pet_name?: string;
           pet_photo_url?: string | null;
+          pet_species?: string | null;
+          pet_profile_id?: number | null;
           author_display_name?: string;
           content?: string;
           content_en?: string | null;
           image_url?: string | null;
+          is_anonymous?: boolean;
+          latitude?: number | null;
+          longitude?: number | null;
           write_date?: string | null;
+          created_at?: string;
+        };
+      };
+      community_comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          user_id: number;
+          pet_name: string;
+          pet_species: string | null;
+          content: string;
+          content_en: string | null;
+          is_anonymous: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          user_id: number;
+          pet_name: string;
+          pet_species?: string | null;
+          content: string;
+          content_en?: string | null;
+          is_anonymous?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          user_id?: number;
+          pet_name?: string;
+          pet_species?: string | null;
+          content?: string;
+          content_en?: string | null;
+          is_anonymous?: boolean;
           created_at?: string;
         };
       };
       mission_completions: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: number;
           mission_id: string;
           period_key: string;
           completed_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id: number;
           mission_id: string;
           period_key: string;
           completed_at?: string;
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: number;
           mission_id?: string;
           period_key?: string;
           completed_at?: string;
@@ -234,6 +284,9 @@ export interface Database {
           total_exp: number;
           total_points: number;
           total_gems: number;
+          streak_current: number;
+          streak_longest: number;
+          streak_last_date: string | null;
           membership_expires_at: string | null;
           created_at: string;
           updated_at: string;
@@ -249,6 +302,9 @@ export interface Database {
           total_exp?: number;
           total_points?: number;
           total_gems?: number;
+          streak_current?: number;
+          streak_longest?: number;
+          streak_last_date?: string | null;
           membership_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -264,6 +320,9 @@ export interface Database {
           total_exp?: number;
           total_points?: number;
           total_gems?: number;
+          streak_current?: number;
+          streak_longest?: number;
+          streak_last_date?: string | null;
           membership_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -274,6 +333,7 @@ export interface Database {
           id: string;
           name: string;
           owner_name: string;
+          owner_nickname: string;
           gender: string;
           species: string;
           breed: string;
@@ -281,7 +341,9 @@ export interface Database {
           weight_kg: number;
           food_brand: string;
           food_amount_g: number;
+          food_cal_per_100g: number;
           personality_tags: string;
+          personality_description: string;
           created_at: string;
           updated_at: string;
           home_latitude: number | null;
@@ -292,6 +354,7 @@ export interface Database {
           id?: string;
           name: string;
           owner_name?: string;
+          owner_nickname?: string;
           gender?: string;
           species?: string;
           breed?: string;
@@ -299,7 +362,9 @@ export interface Database {
           weight_kg?: number;
           food_brand?: string;
           food_amount_g?: number;
+          food_cal_per_100g?: number;
           personality_tags?: string;
+          personality_description?: string;
           created_at?: string;
           updated_at?: string;
           home_latitude?: number | null;
@@ -310,6 +375,7 @@ export interface Database {
           id?: string;
           name?: string;
           owner_name?: string;
+          owner_nickname?: string;
           gender?: string;
           species?: string;
           breed?: string;
@@ -317,7 +383,9 @@ export interface Database {
           weight_kg?: number;
           food_brand?: string;
           food_amount_g?: number;
+          food_cal_per_100g?: number;
           personality_tags?: string;
+          personality_description?: string;
           created_at?: string;
           updated_at?: string;
           home_latitude?: number | null;
@@ -451,6 +519,303 @@ export interface Database {
           body_en?: string;
           router_link?: string;
           expires_at?: string | null;
+          created_at?: string;
+        };
+      };
+      deleted_accounts: {
+        Row: {
+          id: number;
+          provider: string;
+          provider_id: string;
+          deleted_at: string;
+        };
+        Insert: {
+          provider: string;
+          provider_id: string;
+          deleted_at?: string;
+        };
+        Update: {
+          provider?: string;
+          provider_id?: string;
+          deleted_at?: string;
+        };
+      };
+      streak_check_ins: {
+        Row: {
+          id: number;
+          user_id: number;
+          check_in_date: string;
+          streak_count: number;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          check_in_date?: string;
+          streak_count?: number;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          check_in_date?: string;
+          streak_count?: number;
+          created_at?: string;
+        };
+      };
+      user_checkup_records: {
+        Row: {
+          id: number;
+          user_id: number;
+          pet_profile_id: number | null;
+          checkup_date: string;
+          hospital_name: string | null;
+          description: string | null;
+          image_urls: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          pet_profile_id?: number | null;
+          checkup_date: string;
+          hospital_name?: string | null;
+          description?: string | null;
+          image_urls?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          pet_profile_id?: number | null;
+          checkup_date?: string;
+          hospital_name?: string | null;
+          description?: string | null;
+          image_urls?: Json | null;
+          created_at?: string;
+        };
+      };
+      user_food_records: {
+        Row: {
+          id: number;
+          user_id: number;
+          pet_profile_id: number | null;
+          registration_type: string;
+          food_items: Json;
+          total_amount_g: number;
+          total_calories: number;
+          image_url: string | null;
+          analysis: Json | null;
+          memo: string | null;
+          pet_comment: string | null;
+          pet_comment_en: string | null;
+          record_date: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          pet_profile_id?: number | null;
+          registration_type: string;
+          food_items: Json;
+          total_amount_g?: number;
+          total_calories?: number;
+          image_url?: string | null;
+          analysis?: Json | null;
+          memo?: string | null;
+          pet_comment?: string | null;
+          pet_comment_en?: string | null;
+          record_date: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          pet_profile_id?: number | null;
+          registration_type?: string;
+          food_items?: Json;
+          total_amount_g?: number;
+          total_calories?: number;
+          image_url?: string | null;
+          analysis?: Json | null;
+          memo?: string | null;
+          pet_comment?: string | null;
+          pet_comment_en?: string | null;
+          record_date?: string;
+          created_at?: string;
+        };
+      };
+      user_grooming_records: {
+        Row: {
+          id: number;
+          user_id: number;
+          pet_profile_id: number | null;
+          grooming_date: string;
+          image_url: string | null;
+          description: string | null;
+          shop_name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          pet_profile_id?: number | null;
+          grooming_date: string;
+          image_url?: string | null;
+          description?: string | null;
+          shop_name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          pet_profile_id?: number | null;
+          grooming_date?: string;
+          image_url?: string | null;
+          description?: string | null;
+          shop_name?: string | null;
+          created_at?: string;
+        };
+      };
+      user_inventory: {
+        Row: {
+          id: number;
+          user_id: number;
+          item_id: string;
+          quantity: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: number;
+          item_id: string;
+          quantity?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          item_id?: string;
+          quantity?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      user_stool_records: {
+        Row: {
+          id: number;
+          user_id: number;
+          pet_profile_id: number | null;
+          health_score: number | null;
+          color: string | null;
+          consistency: string | null;
+          shape: string | null;
+          size: string | null;
+          has_blood: boolean;
+          has_mucus: boolean;
+          urgency_level: string | null;
+          health_summary: string | null;
+          health_summary_en: string | null;
+          analysis: Json | null;
+          image_url: string | null;
+          record_date: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          pet_profile_id?: number | null;
+          health_score?: number | null;
+          color?: string | null;
+          consistency?: string | null;
+          shape?: string | null;
+          size?: string | null;
+          has_blood?: boolean;
+          has_mucus?: boolean;
+          urgency_level?: string | null;
+          health_summary?: string | null;
+          health_summary_en?: string | null;
+          analysis?: Json | null;
+          image_url?: string | null;
+          record_date: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          pet_profile_id?: number | null;
+          health_score?: number | null;
+          color?: string | null;
+          consistency?: string | null;
+          shape?: string | null;
+          size?: string | null;
+          has_blood?: boolean;
+          has_mucus?: boolean;
+          urgency_level?: string | null;
+          health_summary?: string | null;
+          health_summary_en?: string | null;
+          analysis?: Json | null;
+          image_url?: string | null;
+          record_date?: string;
+          created_at?: string;
+        };
+      };
+      user_walk_records: {
+        Row: {
+          id: number;
+          user_id: number;
+          pet_profile_id: number | null;
+          started_at: string;
+          ended_at: string;
+          duration_seconds: number;
+          distance_meters: number;
+          steps: number;
+          memo: string | null;
+          image_url: string | null;
+          pet_comment: string | null;
+          pet_comment_en: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          pet_profile_id?: number | null;
+          started_at: string;
+          ended_at: string;
+          duration_seconds?: number;
+          distance_meters?: number;
+          steps?: number;
+          memo?: string | null;
+          image_url?: string | null;
+          pet_comment?: string | null;
+          pet_comment_en?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          pet_profile_id?: number | null;
+          started_at?: string;
+          ended_at?: string;
+          duration_seconds?: number;
+          distance_meters?: number;
+          steps?: number;
+          memo?: string | null;
+          image_url?: string | null;
+          pet_comment?: string | null;
+          pet_comment_en?: string | null;
+          created_at?: string;
+        };
+      };
+      user_weight_records: {
+        Row: {
+          id: number;
+          user_id: number;
+          pet_profile_id: number | null;
+          weight_kg: number;
+          record_date: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: number;
+          pet_profile_id?: number | null;
+          weight_kg: number;
+          record_date: string;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: number;
+          pet_profile_id?: number | null;
+          weight_kg?: number;
+          record_date?: string;
           created_at?: string;
         };
       };

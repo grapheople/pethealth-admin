@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-type Tab = "food" | "stool" | "diary" | "comment";
+type Tab = "food" | "stool" | "package" | "diary" | "comment";
 
 export default function ApiTestPage() {
   const [activeTab, setActiveTab] = useState<Tab>("food");
@@ -19,6 +19,7 @@ export default function ApiTestPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "food", label: "사료 분석" },
     { key: "stool", label: "배변 분석" },
+    { key: "package", label: "포장지 분석" },
     { key: "diary", label: "일기 생성" },
     { key: "comment", label: "댓글 생성" },
   ];
@@ -44,6 +45,7 @@ export default function ApiTestPage() {
 
       {activeTab === "food" && <AnalyzeFoodTest />}
       {activeTab === "stool" && <AnalyzeStoolTest />}
+      {activeTab === "package" && <AnalyzeFoodPackageTest />}
       {activeTab === "diary" && <WriteDiaryTest />}
       {activeTab === "comment" && <WriteCommentTest />}
     </div>
@@ -230,6 +232,59 @@ function AnalyzeStoolTest() {
           <Button type="submit" disabled={loading || !file}>
             {loading && <Loader2 className="size-4 animate-spin" />}
             {loading ? "분석 중..." : "분석 요청"}
+          </Button>
+        </form>
+        <ResultDisplay result={result} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function AnalyzeFoodPackageTest() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ status: number; data: unknown } | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!file) return;
+
+    setLoading(true);
+    setResult(null);
+    try {
+      const imageBase64 = await fileToBase64(file);
+
+      const body: Record<string, unknown> = {
+        image_base64: imageBase64,
+        mime_type: file.type || "image/jpeg",
+      };
+
+      const res = await callEdgeFunction("analyze-food-package", body);
+      setResult(res);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">POST /functions/v1/analyze-food-package</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="package_image">포장지 이미지 (필수)</Label>
+            <Input
+              id="package_image"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          <Button type="submit" disabled={loading || !file}>
+            {loading && <Loader2 className="size-4 animate-spin" />}
+            {loading ? "분석 중..." : "포장지 분석"}
           </Button>
         </form>
         <ResultDisplay result={result} />
