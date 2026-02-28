@@ -522,6 +522,42 @@ export interface Database {
           created_at?: string;
         };
       };
+      pet_foods: {
+        Row: {
+          id: string;
+          dedup_key: string;
+          brand: string;
+          brand_en: string;
+          product_name: string;
+          product_name_en: string;
+          species: string;
+          data: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          dedup_key: string;
+          brand?: string;
+          brand_en?: string;
+          product_name?: string;
+          product_name_en?: string;
+          species?: string;
+          data: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          dedup_key?: string;
+          brand?: string;
+          brand_en?: string;
+          product_name?: string;
+          product_name_en?: string;
+          species?: string;
+          data?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       deleted_accounts: {
         Row: {
           id: number;

@@ -12,6 +12,7 @@ import {
   Stethoscope,
   UtensilsCrossed,
   Footprints,
+  Package,
 } from "lucide-react";
 
 export const PAGE_SIZE = 20;
@@ -26,6 +27,7 @@ export const NAV_ITEMS = [
   { href: "/walk-records", label: "산책 기록", icon: Footprints },
   { href: "/grooming-records", label: "미용 기록", icon: Scissors },
   { href: "/checkup-records", label: "검진 기록", icon: Stethoscope },
+  { href: "/pet-foods", label: "사료 정보", icon: Package },
   { href: "/community-posts", label: "커뮤니티", icon: MessageSquare },
   { href: "/user-mails", label: "우편함", icon: Mail },
   { href: "/notices", label: "공지사항", icon: Megaphone },
